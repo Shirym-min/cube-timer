@@ -303,10 +303,6 @@ button.video-guide-target:active:not(:disabled) {
   padding-block: 8px;
   font-weight: 600;
 }
-.video-panel summary:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
 .video-detection-settings {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

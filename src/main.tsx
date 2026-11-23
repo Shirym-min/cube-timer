@@ -28,6 +28,14 @@ class ErrorBoundary extends Component<
     );
   }
 }
+// Touch can trigger :focus-visible on inputs and programmatically focused elements.
+document.addEventListener("pointerdown", () => {
+  document.documentElement.setAttribute("data-pointer-focus", "");
+}, true);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Tab") document.documentElement.removeAttribute("data-pointer-focus");
+}, true);
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <App />

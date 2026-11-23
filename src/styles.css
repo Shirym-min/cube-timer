@@ -63,11 +63,7 @@ select,
 textarea {
   font: inherit;
 }
-button,
-a,
-input,
-select,
-textarea {
+html {
   -webkit-tap-highlight-color: transparent;
 }
 button {
@@ -104,14 +100,12 @@ a {
   color: var(--accent-ink);
   text-decoration: none;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-[tabindex]:focus-visible {
-  outline: 3px solid var(--accent);
+:where(:root:not([data-pointer-focus])) :focus-visible {
+  outline: 2px solid var(--text);
   outline-offset: 3px;
+}
+:root[data-pointer-focus] :focus {
+  outline: none;
 }
 button svg {
   flex-shrink: 0;
@@ -399,13 +393,15 @@ kbd {
 }
 .timer-layout {
   display: grid;
-  grid-template-columns: 258px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 258px;
   flex: 1;
   min-height: 0;
 }
 .records-pane {
+  grid-column: 2;
+  grid-row: 1;
   background: var(--surface);
-  border-right: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -543,6 +539,8 @@ kbd {
   font-size: 10px;
 }
 .timer-workspace {
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   padding: 25px 30px 22px;
   display: flex;
@@ -553,15 +551,14 @@ kbd {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 15px 22px 23px;
+  padding: 9px 16px 11px;
   flex-shrink: 0;
-  min-height: 127px;
 }
 .scramble-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
 }
 .event-selector {
   display: flex;
@@ -578,19 +575,33 @@ kbd {
   background: transparent;
   color: var(--text);
 }
-.scramble-kind {
-  font-family: "DM Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  padding-right: 8px;
-  margin-right: 3px;
-  border-right: 1px solid var(--line);
+.scramble-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.scramble-copy {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: normal;
+}
+.scramble-copy:disabled { color: inherit; opacity: 1; cursor: default; }
+.scramble-copy:focus-visible { outline-offset: -3px; }
+.scramble-refresh {
+  width: 44px;
+  min-height: 44px;
 }
 .scramble-text {
   font-family: "DM Mono", monospace;
   font-size: 16px;
-  line-height: 1.9;
+  line-height: 1.55;
   text-align: center;
   letter-spacing: 0.3px;
   overflow-wrap: anywhere;
@@ -600,10 +611,6 @@ kbd {
 }
 .scramble-text::-webkit-scrollbar {
   display: none;
-}
-.scramble-text span {
-  display: inline-block;
-  white-space: pre;
 }
 .scramble-text.loading {
   color: var(--muted);
@@ -626,20 +633,18 @@ kbd {
   right: 0;
   top: 16px;
 }
+.timer-readout {
+  position: relative;
+  width: 100%;
+}
 .timer-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  position: absolute;
+  inset: auto 0 100%;
+  text-align: center;
   color: var(--muted);
   font-size: 10px;
   letter-spacing: 0.6px;
-  min-height: 20px;
-}
-.timer-status i {
-  height: 5px;
-  width: 5px;
-  border-radius: 50%;
-  background: currentColor;
+  pointer-events: none;
 }
 .timer-stage.ready .timer-status,
 .timer-stage.ready .timer-digits {
@@ -648,9 +653,6 @@ kbd {
 .timer-stage.holding .timer-status,
 .timer-stage.holding .timer-digits {
   color: #c28221;
-}
-.timer-stage.running .timer-status {
-  color: var(--accent-ink);
 }
 .timer-touch {
   width: 100%;
@@ -684,14 +686,9 @@ kbd {
 .timer-digits.text-value {
   font-size: clamp(50px, 7vw, 100px);
 }
-.timer-instruction {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 10px;
-  min-height: 35px;
+.last-solve-handle,
+.last-solve-delete {
+  display: none;
 }
 .last-actions {
   display: flex;
@@ -1243,8 +1240,8 @@ dialog::backdrop {
   width: 100%;
   cursor: pointer;
 }
-.file-button:focus-within {
-  outline: 3px solid var(--accent);
+:root:not([data-pointer-focus]) .file-button:has(input:focus-visible) {
+  outline: 2px solid var(--text);
   outline-offset: 3px;
 }
 .help-content dl {
@@ -1382,7 +1379,7 @@ dialog::backdrop {
     padding-right: 22px;
   }
   .timer-layout {
-    grid-template-columns: 285px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 285px;
   }
   .timer-workspace {
     padding: clamp(22px, 3dvh, 30px) clamp(30px, 3vw, 42px);
@@ -1429,7 +1426,7 @@ dialog::backdrop {
     padding: 0 25px;
   }
   .timer-layout {
-    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 230px;
   }
   .timer-workspace {
     padding: 22px;
@@ -1439,9 +1436,6 @@ dialog::backdrop {
   }
   .timer-digits {
     font-size: 110px;
-  }
-  .timer-instruction {
-    font-size: 9px;
   }
   .records-table td {
     padding-right: 14px;
@@ -1510,8 +1504,8 @@ dialog::backdrop {
     display: none;
   }
   .topbar {
-    height: 61px;
-    padding: 0 18px;
+    height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 12px 0;
     gap: 10px;
   }
   .breadcrumb {
@@ -1533,8 +1527,8 @@ dialog::backdrop {
   }
   .account-button {
     font-size: 10px;
-    min-height: 34px;
-    padding: 6px 10px;
+    min-height: 36px;
+    padding: 4px 10px;
     gap: 6px;
   }
   .mobile-tabs {
@@ -1598,33 +1592,13 @@ dialog::backdrop {
     padding: 16px 18px 20px;
     overflow: visible;
   }
-  .scramble-panel {
-    padding: 10px 14px 16px;
-    border-radius: 8px;
-    min-height: 130px;
-  }
-  .scramble-toolbar {
-    margin-bottom: 9px;
-  }
   .event-selector select {
     font-size: 11px;
     max-width: 210px;
   }
-  .scramble-kind {
-    font-size: 8px;
-    padding-right: 7px;
-    margin: 0;
-  }
-  .scramble-toolbar .button-row {
-    gap: 0;
-  }
-  .scramble-toolbar .icon-button {
-    width: 44px;
-    min-height: 44px;
-  }
   .scramble-text {
     font-size: 14px;
-    line-height: 1.85;
+    line-height: 1.5;
     letter-spacing: 0;
     max-height: 175px;
   }
@@ -1638,19 +1612,9 @@ dialog::backdrop {
   .timer-touch {
     min-height: 130px;
   }
-  .timer-status {
-    font-size: 10px;
-  }
   .timer-tools {
     top: 12px;
     right: -5px;
-  }
-  .timer-instruction {
-    font-size: 9px;
-    gap: 7px;
-  }
-  .timer-instruction kbd {
-    display: none;
   }
   .last-actions {
     font-size: 10px;
@@ -1819,9 +1783,6 @@ dialog::backdrop {
   .quick-stats strong {
     font-size: 12px;
   }
-  .topbar {
-    padding: 0 12px;
-  }
   .timer-workspace {
     padding: 12px;
   }
@@ -1830,9 +1791,6 @@ dialog::backdrop {
   }
   .scramble-text {
     font-size: 13px;
-  }
-  .timer-instruction {
-    font-size: 8px;
   }
   .account-button span {
     display: none;
@@ -1853,15 +1811,6 @@ dialog::backdrop {
   display: block;
   white-space: pre-wrap;
   text-wrap: pretty;
-}
-
-@media (max-width: 760px) {
-  .timer-instruction kbd {
-    display: inline-block;
-  }
-  .timer-instruction {
-    font-size: 9px;
-  }
 }
 
 .hint-popover {
@@ -1962,19 +1911,8 @@ dialog::backdrop {
   .mobile-timer .timer-workspace {
     position: relative;
   }
-  .mobile-timer .last-actions {
-    left: 0;
-    right: 0;
-    justify-content: center;
-    flex-wrap: wrap;
-    height: auto;
-  }
-
   .mobile-timer .quick-stats,
   .mobile-timer .timer-tools {
-    display: none;
-  }
-  .mobile-timer .scramble-kind {
     display: none;
   }
 }
@@ -2008,9 +1946,6 @@ dialog::backdrop {
     min-height: 0;
     padding: 5px 10px 10px;
   }
-  .mobile-timer .scramble-toolbar {
-    margin-bottom: 3px;
-  }
   .mobile-timer .scramble-text {
     font-size: 13px;
     line-height: 1.6;
@@ -2025,14 +1960,6 @@ dialog::backdrop {
   }
   .mobile-timer .timer-touch {
     min-height: 120px;
-  }
-  .mobile-timer .timer-instruction {
-    min-height: 30px;
-  }
-  .mobile-timer .last-actions {
-    position: absolute;
-    bottom: 12px;
-    margin: 0;
   }
   .mobile-timer .unsaved {
     position: absolute;
@@ -2399,12 +2326,12 @@ dialog::backdrop {
 .timer-stage.running .timer-touch { position: relative; z-index: 8; transform: translate(var(--timer-shift-x, 0), var(--timer-shift-y, 0)); }
 .app .rail, .app .topbar, .app .mobile-tabs, .app .scramble-panel,
 .app .records-pane, .app .trend-panel, .app .mobile-quick-stats, .app .app-footer,
-.timer-stage .timer-status, .timer-stage .timer-instruction, .timer-stage .quick-stats, .timer-stage .timer-tools {
+.timer-stage .timer-status, .timer-stage .quick-stats, .timer-stage .timer-tools {
   transition: opacity var(--motion-quick) var(--ease-out), visibility 0s;
 }
 .is-running .rail, .is-running .topbar, .is-running .mobile-tabs, .is-running .scramble-panel,
 .is-running .records-pane, .is-running .trend-panel, .is-running .mobile-quick-stats, .is-running .app-footer,
-.is-running .timer-stage .timer-status, .is-running .timer-stage .timer-instruction,
+.is-running .timer-stage .timer-status,
 .is-running .timer-stage .quick-stats, .is-running .timer-stage .timer-tools {
   opacity: 0; visibility: hidden; pointer-events: none;
   transition-delay: 0s, var(--motion-quick);
@@ -2412,7 +2339,7 @@ dialog::backdrop {
 @media (prefers-reduced-motion: reduce) {
   .timer-touch, .app .rail, .app .topbar, .app .mobile-tabs, .app .scramble-panel,
   .app .records-pane, .app .trend-panel, .app .mobile-quick-stats, .app .app-footer,
-  .timer-stage .timer-status, .timer-stage .timer-instruction, .timer-stage .quick-stats, .timer-stage .timer-tools { transition: none; }
+  .timer-stage .timer-status, .timer-stage .quick-stats, .timer-stage .timer-tools { transition: none; }
 }
 @media (max-width: 760px) {
   .recall-player { overflow: hidden; }
@@ -2515,7 +2442,7 @@ dialog[open][data-closing]::backdrop {
   min-height: 1.6em;
 }
 .scramble-viewport > * { grid-area: 1 / 1; }
-.scramble-frames { position: relative; }
+.scramble-frames { display: block; position: relative; }
 .scramble-outgoing {
   position: absolute;
   inset: 0;
@@ -2657,7 +2584,7 @@ dialog[open][data-closing]::backdrop {
   }
   .mobile-timer .scramble-main {
     flex: 0 0 auto;
-    padding: 5px 10px 10px;
+    padding: 2px 6px 4px 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
@@ -2707,14 +2634,6 @@ dialog[open][data-closing]::backdrop {
 
 
 @media (max-width: 760px) {
-  .app:has(.timer-layout) .topbar {
-    height: 44px;
-    padding-inline: 12px;
-  }
-  .app:has(.timer-layout) .account-button {
-    min-height: 36px;
-    padding-block: 4px;
-  }
   .mobile-tabs,
   .mobile-tabs button {
     height: 40px;
@@ -2797,7 +2716,75 @@ dialog[open][data-closing]::backdrop {
     padding: 0;
   }
   .mobile-timer .timer-touch { min-height: 0; }
-  .mobile-timer .timer-instruction { min-height: 26px; }
   .mobile-timer .diagram,
   .mobile-timer .diagram-placeholder { height: 58px; }
+}
+
+@media (max-width: 760px) {
+  .timer-stage:has(.last-solve-tray) {
+    min-height: 230px;
+    padding-bottom: 48px;
+  }
+  .last-solve-tray {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .last-solve-sheet {
+    --actions-travel: 52px;
+    transform: translateY(var(--actions-travel));
+    transition: transform var(--motion-panel) var(--ease-settle);
+  }
+  .last-solve-sheet[data-open] { transform: translateY(0); }
+  .last-solve-sheet[data-tracking] { transition: none; }
+  .last-solve-handle {
+    display: flex;
+    width: 64px;
+    height: 44px;
+    margin-inline: auto;
+    padding: 0;
+    border: 0;
+    background: var(--bg);
+    color: var(--muted);
+    touch-action: pan-x;
+    pointer-events: auto;
+  }
+  .last-solve-handle:focus-visible { outline-offset: -4px; }
+  .last-solve-sheet[data-open] .last-solve-handle svg { rotate: 180deg; }
+  .last-solve-sheet .last-actions {
+    height: var(--actions-travel);
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    visibility: hidden;
+    transition: visibility 0s var(--motion-panel);
+  }
+  .last-solve-sheet:is([data-open], [data-dragging]) .last-actions {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .last-solve-sheet[data-open]:not([data-tracking]) .last-actions {
+    pointer-events: auto;
+  }
+  .last-solve-sheet .last-actions > span {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .last-solve-sheet .last-actions button {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .last-solve-sheet, .last-solve-sheet .last-actions { transition: none; }
 }

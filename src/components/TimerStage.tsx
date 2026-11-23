@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Maximize2, X, MoreHorizontal } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
+import { LastSolveActions } from "./LastSolveActions";
 import { useTimer, type Phase } from "../lib/useTimer";
 import {
   average,
   formatTime,
-  formatResult,
   type Settings,
   type EventId,
   type Solve,
@@ -16,12 +16,12 @@ type Props = {
   enabled: boolean;
   onFinish: (ms: number, penalty: Penalty, splits: number[]) => void;
   onPhase: (p: Phase) => void;
-  scrambleBusy: boolean;
   pending: Solve | null;
   retry: () => Promise<void>;
   latest: Solve | undefined;
   patch: (s: Solve, p: Partial<Solve>) => Promise<void>;
   edit: (s: Solve) => void;
+  remove: (s: Solve) => Promise<void>;
   solves: Solve[];
   best: number | null;
   focus: boolean;
@@ -33,12 +33,12 @@ export function TimerStage({
   enabled,
   onFinish,
   onPhase,
-  scrambleBusy,
   pending,
   retry,
   latest,
   patch,
   edit,
+  remove,
   solves,
   best,
   focus,
@@ -92,21 +92,13 @@ export function TimerStage({
       ? "計測中"
       : formatTime(timer.elapsed, precision);
   const status =
-    timer.phase === "running"
-      ? settings.phases > 1
-        ? `区間 ${timer.parts.length + 1} / ${settings.phases}`
-        : "計測中"
-      : timer.phase === "ready"
-        ? "離してスタート"
-        : timer.phase === "holding"
-          ? "そのまま長押し"
-          : timer.inspecting
-            ? "インスペクション"
-            : scrambleBusy
-              ? "スクランブルを生成中"
-              : timer.phase === "stopped"
-                ? "計測完了"
-                : "準備完了";
+    timer.phase === "ready"
+      ? "離してスタート"
+      : timer.phase === "holding"
+        ? "そのまま長押し"
+        : timer.inspecting
+          ? "インスペクション"
+          : "";
   return (
     <>
       <section className={`timer-stage ${timer.phase}`} aria-label="タイマー">
@@ -138,60 +130,53 @@ export function TimerStage({
             {focus ? <X size={18} /> : <Maximize2 size={18} />}
           </button>
         </div>
-        <span className="timer-status" aria-live="polite">
-          <i />
-          {status}
-        </span>
-        <div
-          className="timer-touch"
-          ref={touchRef}
-          role="button"
-          aria-disabled={!enabled && timer.phase !== "running"}
-          tabIndex={0}
-          aria-label="長押しして離すと計測開始。計測中に押すと停止"
-          onKeyDown={(e) => {
-            if (e.code === "Enter" && !e.repeat) {
+        <div className="timer-readout">
+          <span className="timer-status" aria-live="polite">{status}</span>
+          <div
+            className="timer-touch"
+            ref={touchRef}
+            role="button"
+            aria-disabled={!enabled && timer.phase !== "running"}
+            tabIndex={0}
+            aria-label="長押しして離すと計測開始。計測中に押すと停止"
+            onKeyDown={(e) => {
+              if (e.code === "Enter" && !e.repeat) {
+                e.preventDefault();
+                timer.down();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.code === "Enter") {
+                e.preventDefault();
+                timer.up();
+              }
+            }}
+            onPointerDown={(e) => {
+              if (e.button !== 0 || !e.isPrimary) return;
               e.preventDefault();
+              e.currentTarget.setPointerCapture(e.pointerId);
               timer.down();
-            }
-          }}
-          onKeyUp={(e) => {
-            if (e.code === "Enter") {
+            }}
+            onPointerUp={(e) => {
+              if (!e.isPrimary) return;
               e.preventDefault();
               timer.up();
-            }
-          }}
-          onPointerDown={(e) => {
-            if (e.button !== 0) return;
-            e.preventDefault();
-            e.currentTarget.setPointerCapture(e.pointerId);
-            timer.down();
-          }}
-          onPointerUp={(e) => {
-            e.preventDefault();
-            timer.up();
-          }}
-          onPointerCancel={timer.cancelHold}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {showClock ? (
-            <RunningTime startedAt={timer.startedAt} precision={precision} />
-          ) : (
-            <TimerDigits value={timeDisplay} />
-          )}
+            }}
+            onPointerCancel={timer.cancelHold}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {showClock ? (
+              <RunningTime startedAt={timer.startedAt} precision={precision} />
+            ) : (
+              <TimerDigits value={timeDisplay} />
+            )}
+          </div>
         </div>
-        <div className="timer-instruction">
-          {timer.phase === "running" ? (
-            "タップ / Space で停止"
-          ) : timer.inspecting ? (
-            "長押しして離すと計測開始"
-          ) : (
-            <>
-              <kbd>space</kbd>
-              <span>または画面を長押しして離す</span>
-            </>
-          )}
-        </div>
+        {timer.phase === "running" && settings.phases > 1 && (
+          <span className="sr-only" role="status">
+            区間 {timer.parts.length + 1} / {settings.phases}
+          </span>
+        )}
         {pending && timed && (
           <div className="unsaved" role="status">
             記録を保存中です。保存に失敗した場合は再試行してください。
@@ -199,34 +184,15 @@ export function TimerStage({
           </div>
         )}
         {latest && !timer.active && !pending && (
-          <div className="last-actions">
-            <span>直前 {formatResult(latest, precision)}</span>
-            {timed && (
-              <button
-                className={latest.penalty === "+2" ? "selected" : ""}
-                onClick={() =>
-                  void patch(latest, {
-                    penalty: latest.penalty === "+2" ? "OK" : "+2",
-                  })
-                }
-              >
-                +2
-              </button>
-            )}
-            <button
-              className={latest.penalty === "DNF" ? "selected" : ""}
-              onClick={() =>
-                void patch(latest, {
-                  penalty: latest.penalty === "DNF" ? "OK" : "DNF",
-                })
-              }
-            >
-              DNF
-            </button>
-            <button aria-label="直前の記録を編集" onClick={() => edit(latest)}>
-              <MoreHorizontal size={16} />
-            </button>
-          </div>
+          <LastSolveActions
+            key={latest.id}
+            solve={latest}
+            precision={precision}
+            timed={timed}
+            patch={patch}
+            edit={edit}
+            remove={remove}
+          />
         )}
         <div className="quick-stats">
           {[

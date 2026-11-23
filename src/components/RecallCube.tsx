@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { Alg } from "cubing/alg";
 import { puzzles } from "cubing/puzzles";
 import { TwistyPlayer } from "cubing/twisty";
-import { recallFaces, topColors, upperNeighbors, upperSlotPair, type TopColor } from "../lib/recallFaces";
+import { recallFaces, topColors, upperNeighbors, upperSlotPair, type RecallFaces, type TopColor } from "../lib/recallFaces";
 type View = "3d" | "top" | "net";
 export type RecallMask = "orientation" | "corners" | "last-slot" | "slot-orientation";
 export const recallMasks: Partial<Record<string, RecallMask>> = {
@@ -62,6 +62,7 @@ export function RecallCube({
   sides,
   rows,
   mask,
+  markStickers,
 }: {
   alg: string;
   auf: string;
@@ -70,6 +71,7 @@ export function RecallCube({
   sides: number;
   rows: 1 | 3;
   mask?: RecallMask;
+  markStickers?: (faces: RecallFaces) => string[];
 }) {
   const [faces, setFaces] = useState<Awaited<
       ReturnType<typeof recallFaces>
@@ -181,14 +183,43 @@ export function RecallCube({
     return gray ? "#888" : color;
   }
   const sideDepth = 0.46;
+  const marked = markStickers?.(faces) ?? [];
+  const outlines: ReactElement[] = [];
+  function mark(sticker: string, x: number, y: number, width: number, height: number) {
+    const number = marked.indexOf(sticker) + 1;
+    if (!number) return;
+    outlines.push(
+      <g key={sticker} data-marked-sticker={sticker}>
+        <rect x={x + 0.08} y={y + 0.08} width={width - 0.16} height={height - 0.16} />
+        <text
+          className="recognition-mark-number"
+          x={x + width / 2}
+          y={y + height / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="white"
+          stroke="black"
+          strokeWidth=".05"
+          paintOrder="stroke"
+          fontSize=".26"
+        >
+          {number}
+        </text>
+      </g>,
+    );
+  }
+
   const cells = faces.U.map((_, i) => {
     const column = i % 3;
     const row = Math.floor(i / 3);
+    const x = 3 + column;
+    const y = 3 + row;
+    mark(`U${i}`, x, y, 1, 1);
     return (
       <path
         key={`U${i}`}
         data-sticker={`U${i}`}
-        d={topStickerPath(3 + column, 3 + row, row, column)}
+        d={topStickerPath(x, y, row, column)}
         fill={stickerColor("U", i)}
       />
     );
@@ -203,10 +234,12 @@ export function RecallCube({
     for (const side of (["F", "R", "L", "B"] as const).slice(0, sides))
       faces[side].slice(0, rows * 3).forEach((_, i) => {
         const [x, y, width, height] = positions[side](i);
+        const sticker = `${side}${i}`;
+        mark(sticker, x, y, width, height);
         cells.push(
           <rect
-            key={`${side}${i}`}
-            data-sticker={`${side}${i}`}
+            key={sticker}
+            data-sticker={sticker}
             x={x}
             y={y}
             width={width}
@@ -229,6 +262,9 @@ export function RecallCube({
       <g stroke="#000" strokeWidth=".065">
         {cells}
       </g>
+      {outlines.length > 0 && (
+        <g aria-hidden="true" fill="none" stroke="white" strokeWidth=".075">{outlines}</g>
+      )}
     </svg>
   );
 }

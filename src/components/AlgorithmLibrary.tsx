@@ -2,6 +2,8 @@ import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type 
 import { Alg } from "cubing/alg";
 import { ArrowLeft, ArrowUpRight, Check, ChevronRight, Copy, LayoutGrid, List } from "lucide-react";
 import library from "../data/algorithm-library.json";
+import { recallFaces } from "../lib/recallFaces";
+import { harrisBaumCodes, harrisBaumRecognition, harrisBaumStickers, type HarrisBaumCode } from "../lib/zbllRecognition";
 import { Modal } from "./Modal";
 import { RecallCube, recallMasks, type RecallMask } from "./RecallCube";
 import "./AlgorithmLibrary.css";
@@ -10,6 +12,7 @@ type SetName = keyof typeof library;
 type Variant = { alg: string; setup: string; moves: number; generated?: boolean };
 type Case = { name: string; group: string; variants: Variant[] };
 type CaseView = "list" | "grid";
+type CaseOrder = "group" | "name" | "recognition";
 
 const sets = Object.keys(library) as SetName[];
 const groupLabels: Record<string, string> = {
@@ -45,8 +48,8 @@ function groupCases(cases: Case[], key: (entry: Case) => string) {
 }
 
 const CasePattern = memo(function CasePattern({
-  setup, set, mask,
-}: { setup: string; set: SetName; mask?: RecallMask }) {
+  setup, set, mask, showHarrisBaum,
+}: { setup: string; set: SetName; mask?: RecallMask; showHarrisBaum: boolean }) {
   return (
     <RecallCube
       alg={new Alg(setup).invert().toString()}
@@ -56,17 +59,19 @@ const CasePattern = memo(function CasePattern({
       sides={4}
       rows={set === "F2L" ? 3 : 1}
       mask={mask}
+      markStickers={showHarrisBaum ? harrisBaumStickers : undefined}
     />
   );
 });
 
 function CaseChoices({
-  entries, view, set, mask, compact, selected, onChoose,
+  entries, view, set, mask, showHarrisBaum, compact, selected, onChoose,
 }: {
   entries: Case[];
   view: CaseView;
   set: SetName;
   mask?: RecallMask;
+  showHarrisBaum: boolean;
   compact: boolean;
   selected?: string;
   onChoose: (entry: Case, trigger: HTMLButtonElement) => void;
@@ -101,7 +106,7 @@ function CaseChoices({
           >
             {view === "grid" && (
               <span className="algorithm-thumbnail" data-case-name={entry.name} aria-hidden="true">
-                {visiblePatterns.has(entry.name) && <CasePattern setup={entry.variants[0].setup} set={set} mask={mask} />}
+                {visiblePatterns.has(entry.name) && <CasePattern setup={entry.variants[0].setup} set={set} mask={mask} showHarrisBaum={showHarrisBaum} />}
               </span>
             )}
             <span>{entry.name}</span>
@@ -123,7 +128,10 @@ export function AlgorithmLibrary({
   const [group, setGroup] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<CaseView>("list");
-  const [nameOrder, setNameOrder] = useState(false);
+  const [caseOrder, setCaseOrder] = useState<CaseOrder>("group");
+  const [codeFilter, setCodeFilter] = useState<HarrisBaumCode | "">("");
+  const [codesBySetup, setCodesBySetup] = useState<Map<string, HarrisBaumCode | null>>();
+  const [recognitionError, setRecognitionError] = useState(false);
   const [grayUnneeded, setGrayUnneeded] = useState(false);
   const [selectedCase, setSelectedCase] = useState("");
   const [floatingCase, setFloatingCase] = useState<Case>();
@@ -131,26 +139,56 @@ export function AlgorithmLibrary({
   const modalTrigger = useRef<HTMLButtonElement>(null);
   const compact = useSyncExternalStore(subscribeToCompactViewport, compactViewport);
   const cases: Case[] = library[set];
+  const order = set !== "ZBLL" && caseOrder === "recognition" ? "group" : caseOrder;
+  const showHarrisBaum = order === "recognition";
+
+  useEffect(() => {
+    if (!showHarrisBaum || codesBySetup) return;
+    let active = true;
+    setRecognitionError(false);
+    const setups = new Set(library.ZBLL.flatMap(({ variants }) => variants.map(({ setup }) => setup)));
+    void Promise.all([...setups].map(async (setup) => {
+      const faces = await recallFaces(new Alg(setup).invert().toString(), "yellow");
+      return [setup, harrisBaumRecognition(faces).code] as const;
+    })).then((entries) => {
+      if (active) setCodesBySetup(new Map(entries));
+    }).catch(() => {
+      if (active) setRecognitionError(true);
+    });
+    return () => { active = false; };
+  }, [showHarrisBaum, codesBySetup]);
+
   const groups = [...new Set(cases.map((entry) => entry.group))];
   const mask = grayUnneeded ? recallMasks[set] : undefined;
   const key = searchKey(query);
   const matches = useMemo(() => {
     const filtered = cases.filter((entry) =>
-      (!group || entry.group === group) && searchKey(entry.name).includes(key),
+      (!group || entry.group === group) &&
+      (!(showHarrisBaum && codeFilter) || codesBySetup?.get(entry.variants[0].setup) === codeFilter) &&
+      searchKey(entry.name).includes(key),
     );
-    return nameOrder ? filtered.sort((a, b) => compareCaseNames(a.name, b.name)) : filtered;
-  }, [cases, group, key, nameOrder]);
+    return order === "name" ? filtered.sort((a, b) => compareCaseNames(a.name, b.name)) : filtered;
+  }, [cases, group, key, order, showHarrisBaum, codeFilter, codesBySetup]);
   const current = matches.find(({ name }) => name === selectedCase) ?? matches[0];
   const sections = useMemo(() => {
-    if (nameOrder) return [{ name: "", entries: matches, subgroups: [] }];
+    if (order === "name") return [{ name: "", entries: matches, subgroups: [] }];
+    if (showHarrisBaum) {
+      const byCode = new Map(groupCases(matches, (entry) => codesBySetup?.get(entry.variants[0].setup) ?? ""));
+      return harrisBaumCodes.flatMap((name) => {
+        const entries = byCode.get(name);
+        if (!entries) return [];
+        const shapes = groupCases(entries, (entry) => entry.group);
+        return [{ name, entries, subgroups: shapes.length > 1 ? shapes : [] }];
+      });
+    }
     return groupCases(matches, (entry) => entry.group).map(([name, entries]) => ({
       name,
       entries,
       subgroups: set === "ZBLL" ? groupCases(entries, (entry) => entry.name.split(" ", 2)[1]) : [],
     }));
-  }, [matches, nameOrder, set]);
+  }, [matches, order, set, showHarrisBaum, codesBySetup]);
   const choiceProps = {
-    view, set, mask, compact,
+    view, set, mask, showHarrisBaum, compact,
     selected: compact ? selectedCase : current?.name,
     onChoose: chooseCase,
   };
@@ -158,6 +196,7 @@ export function AlgorithmLibrary({
   function changeSet(value: SetName) {
     setSet(value);
     setGroup("");
+    setCodeFilter("");
     setQuery("");
     setSelectedCase("");
   }
@@ -193,7 +232,7 @@ export function AlgorithmLibrary({
         </label>
         {groups.length > 1 && (
           <label>
-            {set === "OLL" ? "上面と同色のエッジ" : "グループ"}
+            {set === "OLL" ? "上面と同色のエッジ" : showHarrisBaum ? "上面の形" : "グループ"}
             <select value={group} onChange={(event) => setGroup(event.target.value)}>
               <option value="">すべて</option>
               {groups.map((name) => <option key={name} value={name}>{groupLabels[name] ?? name}</option>)}
@@ -207,21 +246,32 @@ export function AlgorithmLibrary({
         {groups.length > 1 && (
           <label>
             ケースの並び順
-            <select value={nameOrder ? "name" : "group"} onChange={(event) => setNameOrder(event.target.value === "name")}>
+            <select value={order} onChange={(event) => setCaseOrder(event.target.value as CaseOrder)}>
               <option value="group">グループ別</option>
               <option value="name">{set === "PLL" ? "名前順" : "番号順"}</option>
+              {set === "ZBLL" && <option value="recognition">Harris/Baum</option>}
             </select>
           </label>
         )}
-        <label className="algorithm-mask-setting" title={recallMasks[set] ? undefined : "このセットの図は表示中の色をすべて使います"}>
-          <input
-            type="checkbox"
-            checked={!!mask}
-            disabled={!recallMasks[set]}
-            onChange={(event) => setGrayUnneeded(event.target.checked)}
-          />
-          <span>判別に不要な部分を灰色にする</span>
-        </label>
+        {showHarrisBaum ? (
+          <label className="algorithm-code-filter">
+            判別コード
+            <select value={codeFilter} onChange={(event) => setCodeFilter(event.target.value as HarrisBaumCode | "")}>
+              <option value="">すべて</option>
+              {harrisBaumCodes.map((code) => <option key={code}>{code}</option>)}
+            </select>
+          </label>
+        ) : (
+          <label className="algorithm-mask-setting" title={recallMasks[set] ? undefined : "このセットの図は表示中の色をすべて使います"}>
+            <input
+              type="checkbox"
+              checked={!!mask}
+              disabled={!recallMasks[set]}
+              onChange={(event) => setGrayUnneeded(event.target.checked)}
+            />
+            <span>判別に不要な部分を灰色にする</span>
+          </label>
+        )}
       </div>
 
       <div className="algorithm-browser" data-view={view}>
@@ -236,12 +286,15 @@ export function AlgorithmLibrary({
                 <LayoutGrid size={15} aria-hidden="true" />グリッド
               </button>
             </div>
+            {showHarrisBaum && <small className="algorithm-code-legend">C 同色・A 隣接色・O 対面色</small>}
           </div>
 
-          <div className="algorithm-case-scroll" key={`${set}-${nameOrder}`}>
+          <div className="algorithm-case-scroll" key={`${set}-${order}`}>
             {sections.map(({ name, entries, subgroups }) => (
               <div className="algorithm-case-group" key={name}>
-                {name && groups.length > 1 && <h3>{groupLabels[name] ?? name}</h3>}
+                {name && groups.length > 1 && (
+                  <h3>{groupLabels[name] ?? name}{showHarrisBaum && <small>{entries.length}件</small>}</h3>
+                )}
                 {subgroups.length ? (
                   subgroups.map(([subgroup, members]) => (
                     <div className="algorithm-case-subgroup" key={subgroup}>
@@ -254,7 +307,11 @@ export function AlgorithmLibrary({
                 )}
               </div>
             ))}
-            {!matches.length && <p className="algorithm-empty" role="status">該当するケースがありません。</p>}
+            {showHarrisBaum && !codesBySetup ? (
+              <p className="algorithm-empty" role="status">
+                {recognitionError ? "判別コードを読み込めませんでした。並び順を切り替えて再試行してください。" : "判別コードを読み込み中…"}
+              </p>
+            ) : !matches.length && <p className="algorithm-empty" role="status">該当するケースがありません。</p>}
           </div>
         </section>
 
@@ -264,14 +321,14 @@ export function AlgorithmLibrary({
               <h2>{current.name}</h2>
               <SourceLink set={set} />
             </div>
-            <AlgorithmDetail entry={current} set={set} mask={mask} shortFirst={shortFirst} setShortFirst={setShortFirst} />
+            <AlgorithmDetail entry={current} set={set} mask={mask} codesBySetup={showHarrisBaum ? codesBySetup : undefined} shortFirst={shortFirst} setShortFirst={setShortFirst} />
           </section>
         )}
       </div>
 
       {floatingCase && (
         <Modal title={floatingCase.name} onClose={closeDetail} className="algorithm-modal">
-          <AlgorithmDetail entry={floatingCase} set={set} mask={mask} shortFirst={shortFirst} setShortFirst={setShortFirst} />
+          <AlgorithmDetail entry={floatingCase} set={set} mask={mask} codesBySetup={showHarrisBaum ? codesBySetup : undefined} shortFirst={shortFirst} setShortFirst={setShortFirst} />
           <div className="algorithm-modal-source"><SourceLink set={set} /></div>
         </Modal>
       )}
@@ -298,11 +355,12 @@ function SourceLink({ set }: { set: SetName }) {
 }
 
 function AlgorithmDetail({
-  entry, set, mask, shortFirst, setShortFirst,
+  entry, set, mask, codesBySetup, shortFirst, setShortFirst,
 }: {
   entry: Case;
   set: SetName;
   mask?: RecallMask;
+  codesBySetup?: ReadonlyMap<string, HarrisBaumCode | null>;
   shortFirst: boolean;
   setShortFirst: (value: boolean) => void;
 }) {
@@ -312,7 +370,9 @@ function AlgorithmDetail({
   const variants = shortFirst
     ? [...entry.variants].sort((a, b) => a.moves - b.moves)
     : entry.variants;
-  const active = variants.find(({ alg }) => alg === selection) ?? variants[0];
+  const primary = entry.variants[0];
+  const active = variants.find(({ alg }) => alg === selection) ?? (codesBySetup ? primary : variants[0]);
+  const recognitionCode = codesBySetup?.get(active.setup);
 
   useEffect(() => {
     if (!copied) return;
@@ -335,7 +395,7 @@ function AlgorithmDetail({
     <>
       <div className="algorithm-pattern">
         <div className="algorithm-illustration">
-          <CasePattern setup={active.setup} set={set} mask={mask} />
+          <CasePattern setup={active.setup} set={set} mask={mask} showHarrisBaum={!!codesBySetup} />
         </div>
         <div className="algorithm-setup">
           <div className="algorithm-block-heading">
@@ -346,6 +406,8 @@ function AlgorithmDetail({
           </div>
           <code>{active.setup}</code>
           <small>黄色を上、青を手前に</small>
+          {recognitionCode && <small>Harris/Baum <strong>{recognitionCode}</strong></small>}
+          {recognitionCode === null && <small>このセットアップはHarris/Baum判別の対象外です。</small>}
         </div>
       </div>
 
