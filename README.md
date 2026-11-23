@@ -1,6 +1,7 @@
 # SPLIT — Cube Timer
 
 PCとモバイルで使える、ローカル保存・アカウント同期対応のキューブタイマーです。React、TypeScript、Vite、cubing.js、Supabaseで実装しています。
+VIBECODED
 
 ## 起動
 
