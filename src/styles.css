@@ -1948,6 +1948,12 @@ dialog::backdrop {
   height: 230px;
 }
 
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  html:has(.mobile-timer) {
+    overscroll-behavior-y: none;
+  }
+}
+
 /* Keep the primary mobile timer within the viewport; long scrambles scroll locally. */
 @media (max-width: 760px) {
   .mobile-timer .lower-panels {
