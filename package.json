@@ -19,6 +19,8 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@emnapi/core": "2.0.0-beta.2",
+    "@emnapi/runtime": "2.0.0-beta.2",
     "@playwright/test": "latest",
     "@types/node": "^26.6.6",
     "@types/react": "latest",
