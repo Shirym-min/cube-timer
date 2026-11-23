@@ -194,7 +194,7 @@ export function RecallTrainer({ onBack }: { onBack: () => void }) {
     </div>
   );
   return (
-    <main className="recall-page">
+    <main id="main-content" tabIndex={-1} className="recall-page">
       <header className="recall-header">
         <div>
           <button className="text-button recall-back" onClick={onBack}>

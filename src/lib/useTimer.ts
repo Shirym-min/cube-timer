@@ -142,16 +142,16 @@ export function useTimer(
     };
   }, []);
   useEffect(() => {
+    if (phase !== "holding" && !r.current.inspecting) return;
     let frame = 0;
     const tick = () => {
       const s = r.current,
         now = performance.now();
       if (s.phase === "holding" && now - s.holdStart >= options.current.hold)
         change("ready");
-      if (s.phase === "running") setElapsed(Math.floor(now - s.start));
-      else if (s.inspecting) {
+      if (s.inspecting) {
         const time = now - s.inspectionStart;
-        setElapsed(time);
+        setElapsed(Math.floor(time / 1000) * 1000);
         const cue = time >= 12000 ? 2 : time >= 8000 ? 1 : 0;
         if (cue > s.cue) {
           s.cue = cue;
@@ -173,12 +173,15 @@ export function useTimer(
           }
         }
       }
-      frame = requestAnimationFrame(tick);
+      if (s.phase === "holding" || s.inspecting) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [phase]);
+  useEffect(() => {
     return () => {
-      cancelAnimationFrame(frame);
       void audio.current?.close();
+      audio.current = undefined;
     };
   }, []);
   useEffect(() => {
@@ -200,6 +203,7 @@ export function useTimer(
   return {
     phase,
     elapsed,
+    startedAt: r.current.start,
     parts,
     down,
     up,

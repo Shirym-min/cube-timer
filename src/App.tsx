@@ -78,7 +78,7 @@ export default function App() {
     [scrambleError, setScrambleError] = useState(""),
     [multiCount, setMultiCount] = useState(2),
     [multiIndex, setMultiIndex] = useState(0),
-    [toast, setToast] = useState(""),
+    [toast, setToast] = useState({ text: "", visible: false }),
     [focus, setFocus] = useState(false),
     [pending, setPending] = useState<Solve | null>(null),
     [search, setSearch] = useState("");
@@ -211,8 +211,8 @@ export default function App() {
     if (store.recovery) setModal("account");
   }, [store.recovery]);
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 3500);
+    if (!toast.visible) return;
+    const t = setTimeout(() => setToast({ ...toast, visible: false }), 3500);
     return () => clearTimeout(t);
   }, [toast]);
   const locked = timer.active || !!pending;
@@ -269,7 +269,7 @@ export default function App() {
     multiCount,
   ]);
 
-  const notify = (text: string) => setToast(text);
+  const notify = (text: string) => setToast({ text, visible: true });
   async function patch(s: Solve, change: Partial<Solve>) {
     try {
       await store.commit("solve", s.id, { ...s, ...change });
@@ -321,7 +321,12 @@ export default function App() {
   return (
     <div
       className={`app ${focus ? "focus-mode" : ""} ${timer.phase === "running" ? "is-running" : ""}`}
+      onClickCapture={(e) =>
+        e.currentTarget.toggleAttribute("data-pointer-motion", e.detail > 0)
+      }
+      onKeyDownCapture={(e) => e.currentTarget.removeAttribute("data-pointer-motion")}
     >
+      {!locked && <a className="skip-link" href="#main-content">本文へ移動</a>}
       <aside className="rail">
         <a
           href="#"
@@ -351,6 +356,7 @@ export default function App() {
             <button
               key={key}
               disabled={locked}
+              aria-label={label}
               aria-current={
                 page === key || (key === "practice" && (page === "recall" || page === "video"))
                   ? "page"
@@ -370,11 +376,11 @@ export default function App() {
           ))}
         </nav>
         <div className="rail-bottom">
-          <button disabled={locked} onClick={() => setModal("help")}>
+          <button aria-label="操作ガイド" disabled={locked} onClick={() => setModal("help")}>
             <Keyboard size={19} />
             <span>操作ガイド</span>
           </button>
-          <button disabled={locked} onClick={() => setModal("settings")}>
+          <button aria-label="設定" disabled={locked} onClick={() => setModal("settings")}>
             <Settings2 size={19} />
             <span>設定</span>
           </button>
@@ -399,7 +405,7 @@ export default function App() {
                         ? "動画解析"
                         : "練習"}
             </span>
-            {page !== "video" && (
+            {(page === "timer" || page === "stats") && (
               <>
                 <ChevronRight size={14} />
                 <span className="current-session">
@@ -425,6 +431,7 @@ export default function App() {
             )}
             <button
               className="account-button"
+              aria-label={store.user ? "アカウント" : "ログイン"}
               onClick={() => setModal("account")}
               disabled={locked}
             >
@@ -445,15 +452,15 @@ export default function App() {
           </div>
         )}
         {!store.loaded ? (
-          <div className="loading-screen">
+          <main id="main-content" tabIndex={-1} className="loading-screen">
             <Box size={32} />
             <p>記録を読み込んでいます…</p>
             {store.error && (
               <button onClick={() => location.reload()}>再読み込み</button>
             )}
-          </div>
+          </main>
         ) : !session ? (
-          <main className="loading-screen">
+          <main id="main-content" tabIndex={-1} className="loading-screen">
             <p>セッションがありません。</p>
             <button className="primary" onClick={() => setModal("newSession")}>
               セッションを作成
@@ -463,6 +470,7 @@ export default function App() {
           <>
             <div className="mobile-tabs">
               <button
+                aria-pressed={mobileTab === "timer"}
                 className={mobileTab === "timer" ? "selected" : ""}
                 onClick={() => setMobileTab("timer")}
               >
@@ -470,13 +478,15 @@ export default function App() {
               </button>
               <button
                 disabled={locked}
+                aria-pressed={mobileTab === "records"}
                 className={mobileTab === "records" ? "selected" : ""}
                 onClick={() => setMobileTab("records")}
               >
                 記録 <span>{solves.length}</span>
               </button>
             </div>
-            <div className={`timer-layout mobile-${mobileTab}`}>
+            <main id="main-content" tabIndex={-1} className={`timer-layout mobile-${mobileTab}`}>
+              <h1 className="sr-only">タイマー</h1>
               <aside className="records-pane" aria-label="計測記録">
                 <div className="session-toolbar">
                   <label className="sr-only" htmlFor="session">
@@ -602,7 +612,7 @@ export default function App() {
                   </button>
                 </div>
               </aside>
-              <main className="timer-workspace">
+              <div className="timer-workspace">
                 <section className="scramble-panel" aria-label="スクランブル">
                   <div className="scramble-toolbar">
                     <div className="event-selector">
@@ -812,11 +822,11 @@ export default function App() {
                     </section>
                   )}
                 </div>
-              </main>
-            </div>
+              </div>
+            </main>
           </>
         ) : page === "stats" ? (
-          <main className="page-content">
+          <main key="stats" id="main-content" tabIndex={-1} className="page-content">
             <header className="page-heading">
               <div>
                 <h1>統計</h1>
@@ -965,7 +975,7 @@ export default function App() {
             </div>
           </main>
         ) : page === "practice" ? (
-          <main className="page-content practice-page">
+          <main key="practice" id="main-content" tabIndex={-1} className="page-content practice-page">
             <header className="page-heading">
               <h1>練習</h1>
             </header>
@@ -987,16 +997,16 @@ export default function App() {
           </main>
         ) : page === "recall" ? (
           <Suspense
-            fallback={<main className="loading-screen">読み込み中…</main>}
+            fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}
           >
             <RecallTrainer onBack={() => setPage("practice")} />
           </Suspense>
         ) : page === "video" ? (
-          <Suspense fallback={<main className="loading-screen">読み込み中…</main>}>
+          <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
             <SolveVideo onBack={() => setPage("practice")} />
           </Suspense>
         ) : (
-          <main className="page-content">
+          <main key="sessions" id="main-content" tabIndex={-1} className="page-content">
             <header className="page-heading">
               <h1>セッション</h1>
               <button
@@ -1042,12 +1052,11 @@ export default function App() {
           </button>
         </footer>
       </div>
-      {toast && (
-        <div className="toast" role="status">
-          <Check size={16} />
-          {toast}
-        </div>
-      )}
+      <div className="sr-only" role="status">{toast.visible ? toast.text : ""}</div>
+      <div className="toast" aria-hidden="true" data-visible={toast.visible}>
+        <Check size={16} />
+        {toast.text}
+      </div>
       {modal === "settings" && (
         <Modal title="設定" onClose={() => setModal(null)}>
           <Settings

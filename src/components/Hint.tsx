@@ -36,6 +36,7 @@ export function Hint({
       const button = trigger.current;
       if (!button?.getClientRects().length || getComputedStyle(button).visibility !== "visible") return;
       event.preventDefault();
+      popover.current?.removeAttribute("data-pointer-motion");
       if (popover.current?.matches(":popover-open")) {
         popover.current.hidePopover();
       } else {
@@ -53,7 +54,9 @@ export function Hint({
     const width = Math.min(360, innerWidth - 32);
     const above = b.top >= 240;
     p.style.width = `${width}px`;
-    p.style.left = `${Math.max(16, Math.min(b.right - width, innerWidth - width - 16))}px`;
+    const left = Math.max(16, Math.min(b.right - width, innerWidth - width - 16));
+    p.style.left = `${left}px`;
+    p.style.transformOrigin = `${b.left + b.width / 2 - left}px ${above ? "bottom" : "top"}`;
     p.style.top = above ? "auto" : `${b.bottom + 8}px`;
     p.style.bottom = above ? `${innerHeight - b.top + 8}px` : "auto";
     p.style.maxHeight = `${Math.max(120, above ? b.top - 24 : innerHeight - b.bottom - 24)}px`;
@@ -122,7 +125,8 @@ export function Hint({
         aria-expanded={open}
         aria-controls={id}
         aria-keyshortcuts="H"
-        onClick={() => {
+        onClick={(e) => {
+          popover.current?.toggleAttribute("data-pointer-motion", e.detail > 0);
           position();
           if (!open) {
             setBusy(true);

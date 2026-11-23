@@ -15,6 +15,9 @@ const moves = ["U", "D", "R", "L", "F", "B"].flatMap((f) => [
   f + "2",
   f + "'",
 ]);
+const rotations: Record<string, string> = {
+  D: "", U: "z2", F: "x'", B: "x", R: "z'", L: "z",
+};
 let prepared: ReturnType<typeof prepare> | undefined;
 async function prepare() {
   const k = await puzzles["3x3x3"].kpuzzle();
@@ -35,7 +38,20 @@ async function prepare() {
       out.push(a);
     }
   }
-  return { k, edge, corner };
+  const orientedMoves = Object.fromEntries(
+    Object.entries(rotations).map(([face, rotation]) => [
+      face,
+      moves.map((move) => {
+        const target = JSON.stringify(k.defaultPattern().applyAlg(`${move} ${rotation}`).patternData);
+        const mapped = moves.find((candidate) =>
+          JSON.stringify(k.defaultPattern().applyAlg(`${rotation} ${candidate}`).patternData) === target,
+        );
+        if (!mapped) throw Error("手順の向きを変換できませんでした。");
+        return mapped;
+      }),
+    ]),
+  );
+  return { k, edge, corner, orientedMoves };
 }
 const tables = new Map<string, Int8Array>();
 function crossNext(code: number, t: Uint8Array) {
@@ -104,7 +120,7 @@ export async function solveHint(
   xcross = false,
   budgetMs = 10000,
 ): Promise<{ alg: string; depth: number; face: string; xcross: boolean }> {
-  const { k, edge, corner } = await (prepared ??= prepare()),
+  const { k, edge, corner, orientedMoves } = await (prepared ??= prepare()),
     p = FACE_PIECES[face];
   if (!p) throw Error("面を選択してください。");
   const pattern = k.defaultPattern().applyAlg(scramble).patternData;
@@ -154,6 +170,6 @@ export async function solveHint(
   // shortcut: X-cross search is capped at 12 HTM and a time budget; raise the bound only with stronger pruning.
   for (let depth = Math.max(ct[cross], pt?.[pair] ?? 0); depth <= 12; depth++)
     if (dfs(cross, pair, depth, -1))
-      return { alg: path.map((m) => moves[m]).join(" "), depth, face, xcross };
+      return { alg: [rotations[face], ...path.map((m) => orientedMoves[face][m])].filter(Boolean).join(" "), depth, face, xcross };
   throw Error("12手以内の解が見つかりませんでした。");
 }

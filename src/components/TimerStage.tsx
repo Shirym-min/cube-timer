@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Maximize2, X, MoreHorizontal } from "lucide-react";
 import { useTimer, type Phase } from "../lib/useTimer";
 import {
@@ -70,7 +70,38 @@ export function TimerStage({
     window.addEventListener('resize', position);
     return () => { window.removeEventListener('resize', position); };
   }, [timer.phase]);
-  useEffect(() => onPhase(timer.phase), [timer.phase, onPhase]);
+  useEffect(() => {
+    if (timer.phase !== "running") return;
+    let pointer: number | null = null;
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" || pointer !== null) return;
+      pointer = e.pointerId;
+      e.preventDefault();
+      e.stopPropagation();
+      timer.down();
+    };
+    const up = (e: PointerEvent) => {
+      if (e.pointerId !== pointer) return;
+      pointer = null;
+      e.preventDefault();
+      e.stopPropagation();
+      timer.up();
+    };
+    const cancel = (e: PointerEvent) => {
+      if (e.pointerId !== pointer) return;
+      pointer = null;
+      timer.cancelHold();
+    };
+    window.addEventListener("pointerdown", down, true);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", cancel, true);
+    return () => {
+      window.removeEventListener("pointerdown", down, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", cancel, true);
+    };
+  }, [timer.phase]);
+  useLayoutEffect(() => onPhase(timer.phase), [timer.phase, onPhase]);
   const precision = settings.precision,
     timed = !["333fm", "333mbf"].includes(event);
   const statsFormat = (n: number | null) =>
@@ -81,16 +112,16 @@ export function TimerStage({
           ? n.toFixed(2)
           : "DNF"
       : formatTime(n, precision);
+  const showClock = timer.phase === "running" && !settings.hideRunning;
   const timeDisplay = timer.inspecting
     ? timer.elapsed >= 17000
       ? "DNF"
       : timer.elapsed >= 15000
         ? "+2"
         : String(Math.ceil((15000 - timer.elapsed) / 1000))
-    : settings.hideRunning && timer.phase === "running"
+    : timer.phase === "running"
       ? "計測中"
       : formatTime(timer.elapsed, precision);
-  const [integer, decimal] = timeDisplay.split(".");
   const status =
     timer.phase === "running"
       ? settings.phases > 1
@@ -155,19 +186,11 @@ export function TimerStage({
           onPointerCancel={timer.cancelHold}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <div
-            className={`timer-digits ${!decimal ? "text-value" : ""}`}
-            aria-hidden="true"
-          >
-            <span>{integer}</span>
-            {decimal && (
-              <>
-                <span className="decimal-dot">.</span>
-                <span className="decimals">{decimal}</span>
-              </>
-            )}
-          </div>
-          <span className="sr-only">{timeDisplay}</span>
+          {showClock ? (
+            <RunningTime startedAt={timer.startedAt} precision={precision} />
+          ) : (
+            <TimerDigits value={timeDisplay} />
+          )}
         </div>
         <div className="timer-instruction">
           {timer.phase === "running" ? (
@@ -235,6 +258,46 @@ export function TimerStage({
             ))}
         </div>
       </section>
+    </>
+  );
+}
+
+function RunningTime({
+  startedAt,
+  precision,
+}: {
+  startedAt: number;
+  precision: Settings["precision"];
+}) {
+  const [value, setValue] = useState(() => formatTime(0, precision));
+  useEffect(() => {
+    let frame = requestAnimationFrame(tick);
+    function tick() {
+      setValue(formatTime(Math.floor(performance.now() - startedAt), precision));
+      frame = requestAnimationFrame(tick);
+    }
+    return () => cancelAnimationFrame(frame);
+  }, [startedAt, precision]);
+  return <TimerDigits value={value} />;
+}
+
+function TimerDigits({ value }: { value: string }) {
+  const [integer, decimal] = value.split(".");
+  return (
+    <>
+      <div
+        className={`timer-digits ${!decimal ? "text-value" : ""}`}
+        aria-hidden="true"
+      >
+        <span>{integer}</span>
+        {decimal && (
+          <>
+            <span className="decimal-dot">.</span>
+            <span className="decimals">{decimal}</span>
+          </>
+        )}
+      </div>
+      <span className="sr-only">{value}</span>
     </>
   );
 }

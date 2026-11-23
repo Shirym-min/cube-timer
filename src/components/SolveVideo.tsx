@@ -26,7 +26,7 @@ export function SolveVideo({ onBack }: { onBack: () => void }) {
   useEffect(() => () => { if (clip) URL.revokeObjectURL(clip.url); }, [clip]);
 
   return (
-    <main className="page-content video-analysis">
+    <main id="main-content" tabIndex={-1} className="page-content video-analysis">
       <header className="video-header">
         <div>
           <button className="video-back" onClick={onBack}><ArrowLeft size={15} /> 練習</button>
