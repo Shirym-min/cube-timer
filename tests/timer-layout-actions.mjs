@@ -74,18 +74,32 @@ try {
     const { x, y, width, height } = await locator.boundingBox();
     return { x: x + width / 2, y: y + height / 2 };
   };
-  async function holdTimer(ms) {
-    await touch("touchStart", await center(timerTouch));
+  async function pressAt(point, ms) {
+    await touch("touchStart", point);
     await mobile.waitForTimeout(ms);
     await touch("touchEnd");
   }
-  await holdTimer(60);
+  const stage = mobile.locator(".timer-stage");
+  const stageBox = await stage.boundingBox();
+  const readout = await timerTouch.boundingBox();
+  const upper = { x: stageBox.x + 12, y: stageBox.y + 12 };
+  assert.ok(upper.y < readout.y);
+  await pressAt(upper, 60);
   assert.equal(await mobile.locator(".timer-stage.running").count(), 0);
-  await holdTimer(400);
+  await pressAt(upper, 400);
   await mobile.locator(".timer-stage.running").waitFor();
   await mobile.waitForTimeout(250);
-  await holdTimer(15);
+  await pressAt({ x: 12, y: 20 }, 15);
   await handle.waitFor();
+  await mobile.locator('.timer-touch[aria-disabled="false"]').waitFor();
+
+  const lowerStage = await stage.boundingBox();
+  const lower = { x: lowerStage.x + 12, y: lowerStage.y + lowerStage.height - 12 };
+  await touch("touchStart", lower);
+  await mobile.locator(".timer-stage.ready").waitFor();
+  await touch("touchMove", { x: lower.x + 35, y: lower.y });
+  await touch("touchEnd");
+  assert.equal(await mobile.locator(".timer-stage.running").count(), 0);
 
   const plusTwo = mobile.getByRole("button", { name: "+2", exact: true });
   const dnf = mobile.getByRole("button", { name: "DNF", exact: true });
@@ -130,7 +144,7 @@ try {
   await handle.waitFor({ state: "detached" });
   await mobile.getByRole("button", { name: /^記録/ }).tap();
   assert.equal(await mobile.locator(".records-table tbody tr").count(), 0);
-  console.log("PASS: compact timer layout, clipboard, shared header height, pointer focus, and mobile solve actions.");
+  console.log("PASS: compact timer layout, clipboard, shared header height, pointer focus, expanded start area, and mobile solve actions.");
 } finally {
   await browser.close();
 }

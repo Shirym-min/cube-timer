@@ -55,6 +55,8 @@ export function TimerStage({
     onFinish,
   );
   const touchRef = useRef<HTMLDivElement>(null);
+  const surfacePress = useRef<{ x: number; y: number } | null>(null);
+  const running = timer.phase === "running";
   useLayoutEffect(() => {
     const element = touchRef.current;
     if (!element || timer.phase !== "running") return;
@@ -102,22 +104,36 @@ export function TimerStage({
   return (
     <>
       <section className={`timer-stage ${timer.phase}`} aria-label="タイマー">
-        {timer.phase === "running" && (
+        {(enabled || running) && (
           <div
-            className="timer-stop-surface"
+            className={running ? "timer-stop-surface" : "timer-start-surface"}
             aria-hidden="true"
             onPointerDown={(e) => {
               if (e.button !== 0 || !e.isPrimary) return;
               e.preventDefault();
               e.currentTarget.setPointerCapture(e.pointerId);
+              if (!running) surfacePress.current = { x: e.clientX, y: e.clientY };
               timer.down();
             }}
+            onPointerMove={(e) => {
+              const start = surfacePress.current;
+              if (!e.isPrimary || !start) return;
+              if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 16) {
+                surfacePress.current = null;
+                timer.cancelHold();
+              }
+            }}
             onPointerUp={(e) => {
-              if (!e.isPrimary) return;
+              if (!e.isPrimary || (!running && !surfacePress.current)) return;
               e.preventDefault();
+              surfacePress.current = null;
               timer.up();
             }}
-            onPointerCancel={timer.cancelHold}
+            onLostPointerCapture={(e) => {
+              if (!e.isPrimary || (!running && !surfacePress.current)) return;
+              surfacePress.current = null;
+              timer.cancelHold();
+            }}
             onContextMenu={(e) => e.preventDefault()}
           />
         )}

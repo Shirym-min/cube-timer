@@ -2617,8 +2617,18 @@ dialog[open][data-closing]::backdrop {
   -webkit-user-select: text;
   user-select: text;
 }
+.timer-start-surface,
 .timer-stop-surface {
   display: none;
+}
+@media (max-width: 760px) {
+  .timer-start-surface {
+    display: block;
+    position: absolute;
+    inset: 0;
+    touch-action: pan-y pinch-zoom;
+    cursor: pointer;
+  }
 }
 @media (hover: none), (pointer: coarse) {
   .timer-stop-surface {
