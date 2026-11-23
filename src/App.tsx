@@ -753,14 +753,7 @@ export default function App() {
                             </button>
                           </span>
                         ) : scramble ? (
-                          <span
-                            key={scramble}
-                            className="scramble-sequence"
-                            aria-hidden={scrambleBusy || undefined}
-                            translate="no"
-                          >
-                            {scramble}
-                          </span>
+                          <ScrambleSequence value={scramble} busy={scrambleBusy} />
                         ) : null}
                       </div>
                       <span className="scramble-progress" role="status">
@@ -1311,6 +1304,31 @@ function SessionForm({
     </form>
   );
 }
+function ScrambleSequence({ value, busy }: { value: string; busy: boolean }) {
+  const [current, setCurrent] = useState(value);
+  const [previous, setPrevious] = useState("");
+  if (current !== value) {
+    setPrevious(current);
+    setCurrent(value);
+  }
+  return (
+    <div className="scramble-frames" translate="no">
+      {[previous, value].filter(Boolean).map((sequence, index, frames) => {
+        const outgoing = index < frames.length - 1;
+        return (
+          <span
+            key={sequence}
+            className={outgoing ? "scramble-outgoing" : "scramble-sequence"}
+            aria-hidden={outgoing || busy || undefined}
+          >
+            {sequence}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function SessionRow({
   session,
   count,

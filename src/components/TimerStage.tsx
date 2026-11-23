@@ -274,7 +274,7 @@ function TimerDigits({ value }: { value: string }) {
   return (
     <>
       <div
-        className={`timer-digits ${!decimal ? "text-value" : ""}`}
+        className={`timer-digits ${!decimal ? "text-value" : integer.length > 2 ? "long-value" : ""}`}
         aria-hidden="true"
       >
         <span>{integer}</span>

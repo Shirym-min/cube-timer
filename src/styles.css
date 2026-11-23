@@ -24,6 +24,7 @@
   --motion-quick: 160ms;
   --motion-panel: 200ms;
   --motion-dialog: 280ms;
+  --ease-fluid: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;
@@ -1844,7 +1845,7 @@ dialog::backdrop {
   }
 }
 
-.scramble-text .scramble-sequence {
+.scramble-text :is(.scramble-sequence, .scramble-outgoing) {
   display: block;
   white-space: pre-wrap;
   text-wrap: pretty;
@@ -1873,33 +1874,36 @@ dialog::backdrop {
   max-width: calc(100vw - 32px);
 }
 .hint-popover[data-pointer-motion] {
+  --hint-rest: scale(0.82);
+  --hint-travel: 360ms;
   opacity: 0;
-  transform: scale(0.97);
+  transform: var(--hint-rest);
   pointer-events: none;
-  transition: opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
-  transition: opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out),
-    display var(--motion-quick) allow-discrete, overlay var(--motion-quick) allow-discrete;
+  transition: opacity var(--motion-quick) var(--ease-settle),
+    transform var(--motion-quick) var(--ease-settle);
+  transition:
+    opacity var(--motion-quick) var(--ease-settle),
+    transform var(--motion-quick) var(--ease-settle),
+    display var(--motion-quick) allow-discrete,
+    overlay var(--motion-quick) allow-discrete;
 }
 .hint-popover[data-pointer-motion]:popover-open {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+  transition-duration: var(--hint-travel);
+  transition-timing-function: var(--ease-fluid), var(--ease-fluid), ease, ease;
 }
 @starting-style {
   .hint-popover[data-pointer-motion]:popover-open {
     opacity: 0;
-    transform: scale(0.97);
+    transform: var(--hint-rest);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hint-popover[data-pointer-motion],
+  .hint-popover[data-pointer-motion] { --hint-rest: none; }
   .hint-popover[data-pointer-motion]:popover-open {
-    transform: none;
-  }
-  @starting-style {
-    .hint-popover[data-pointer-motion]:popover-open {
-      transform: none;
-    }
+    transition-duration: var(--motion-quick);
   }
 }
 .hint-popover::backdrop {
@@ -2479,10 +2483,20 @@ dialog[open][data-closing]::backdrop {
   min-height: 1.6em;
 }
 .scramble-viewport > * { grid-area: 1 / 1; }
-.scramble-text.loading { opacity: 0.2; }
-.scramble-text,
+.scramble-frames { position: relative; }
+.scramble-outgoing {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.scramble-text.loading .scramble-sequence,
+.scramble-outgoing { opacity: 0; }
 .scramble-sequence,
-.diagram twisty-player {
+.scramble-outgoing,
+.diagram twisty-player,
+.hint-result,
+.hint-preview,
+.last-actions {
   transition: opacity var(--motion-quick) var(--ease-settle);
 }
 .scramble-progress {
@@ -2497,19 +2511,38 @@ dialog[open][data-closing]::backdrop {
 .scramble-refresh-icon { display: flex; }
 @media (prefers-reduced-motion: no-preference) {
   .scramble-sequence,
-  .scramble-refresh-icon {
+  .scramble-outgoing {
+    transform-origin: center bottom;
+    transition:
+      transform 390ms var(--ease-fluid),
+      opacity 280ms ease-out 70ms,
+      filter 250ms ease-out 40ms;
+  }
+  .scramble-refresh-icon,
+  .last-actions,
+  .hint-preview {
     transition: opacity var(--motion-panel) var(--ease-settle),
       transform var(--motion-panel) var(--ease-settle);
   }
   .scramble-refresh[data-generating] .scramble-refresh-icon { transform: rotate(-35deg); }
-  .scramble-text.loading .scramble-sequence { transform: translateY(-4px); }
+  .scramble-text.loading .scramble-sequence,
+  .scramble-outgoing {
+    transform: perspective(480px) translateY(-8px) translateZ(-42px) rotateX(46deg);
+    filter: blur(2px);
+  }
   @starting-style {
-    .scramble-sequence { transform: translateY(5px); }
+    .scramble-text:not(.loading) .scramble-sequence {
+      transform: perspective(480px) translateY(11px) translateZ(-12px) rotateX(-22deg);
+    }
+    .last-actions, .hint-preview { transform: translateY(4px); }
   }
 }
 @starting-style {
   .scramble-sequence,
-  .diagram twisty-player { opacity: 0; }
+  .diagram twisty-player,
+  .hint-result,
+  .hint-preview,
+  .last-actions { opacity: 0; }
 }
 
 
@@ -2609,10 +2642,12 @@ dialog[open][data-closing]::backdrop {
   }
   .mobile-timer .diagram-panel .panel-heading {
     justify-content: space-between;
+    gap: 4px;
     min-height: 32px;
   }
   .mobile-timer .diagram-mobile-label {
     display: inline;
+    white-space: nowrap;
     font-size: 10px;
     font-weight: 600;
   }
@@ -2650,5 +2685,32 @@ dialog[open][data-closing]::backdrop {
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .app:has(.timer-layout) .topbar {
+    height: 44px;
+    padding-inline: 12px;
+  }
+  .app:has(.timer-layout) .account-button {
+    min-height: 36px;
+    padding-block: 4px;
+  }
+  .mobile-tabs,
+  .mobile-tabs button {
+    height: 40px;
+  }
+  .mobile-timer .timer-digits:not(.text-value) {
+    font-size: clamp(94px, 32vw, 146px);
+  }
+  .mobile-timer .timer-digits.long-value:not(.text-value) {
+    font-size: clamp(58px, 21vw, 104px);
+  }
+}
+@media (max-width: 760px) and (min-height: 650px) {
+  .mobile-timer .timer-stage {
+    padding-bottom: clamp(72px, 13dvh, 116px);
   }
 }

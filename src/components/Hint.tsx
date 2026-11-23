@@ -16,7 +16,8 @@ export function Hint({
   const id = useId(),
     trigger = useRef<HTMLButtonElement>(null),
     popover = useRef<HTMLDivElement>(null),
-    preview = useRef<HTMLDivElement>(null);
+    preview = useRef<HTMLDivElement>(null),
+    pointerOffset = useRef<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [result, setResult] = useState<{ alg: string; depth: number } | null>(null),
@@ -56,7 +57,11 @@ export function Hint({
     p.style.width = `${width}px`;
     const left = Math.max(16, Math.min(b.right - width, innerWidth - width - 16));
     p.style.left = `${left}px`;
-    p.style.transformOrigin = `${b.left + b.width / 2 - left}px ${above ? "bottom" : "top"}`;
+    const x = b.left + (pointerOffset.current?.x ?? b.width / 2) - left;
+    const y = pointerOffset.current?.y ?? b.height / 2;
+    p.style.transformOrigin = above
+      ? `${x}px calc(100% + ${8 + y}px)`
+      : `${x}px ${y - b.height - 8}px`;
     p.style.top = above ? "auto" : `${b.bottom + 8}px`;
     p.style.bottom = above ? `${innerHeight - b.top + 8}px` : "auto";
     p.style.maxHeight = `${Math.max(120, above ? b.top - 24 : innerHeight - b.bottom - 24)}px`;
@@ -126,7 +131,12 @@ export function Hint({
         aria-controls={id}
         aria-keyshortcuts="H"
         onClick={(e) => {
-          popover.current?.toggleAttribute("data-pointer-motion", e.detail > 0);
+          const pointer = e.detail > 0;
+          popover.current?.toggleAttribute("data-pointer-motion", pointer);
+          const rect = e.currentTarget.getBoundingClientRect();
+          pointerOffset.current = pointer
+            ? { x: e.clientX - rect.left, y: e.clientY - rect.top }
+            : null;
           position();
           if (!open) {
             setBusy(true);
