@@ -23,6 +23,8 @@
   --motion-press: 120ms;
   --motion-quick: 160ms;
   --motion-panel: 200ms;
+  --motion-dialog: 280ms;
+  --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;
 }
@@ -262,7 +264,7 @@ kbd {
   display: grid;
   gap: 8px;
 }
-.rail nav button,
+.rail nav a,
 .rail-bottom > button {
   justify-content: flex-start;
   border-color: transparent;
@@ -273,13 +275,39 @@ kbd {
   font-size: 12px;
   color: var(--muted);
 }
-.rail nav button.active {
+.rail nav a,
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  touch-action: manipulation;
+}
+.action-link {
+  gap: 8px;
+  padding: 8px 13px;
+  min-height: 38px;
+  font-size: 12px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rail nav a[href]:hover,
+  .action-link[href]:hover {
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+  }
+}
+.rail nav a[aria-disabled="true"],
+.action-link[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.rail nav a.active {
   color: var(--accent-ink);
   background: var(--accent-soft);
   font-weight: 600;
   position: relative;
 }
-.rail nav button.active:before {
+.rail nav a.active:before {
   position: absolute;
   content: "";
   width: 3px;
@@ -493,18 +521,6 @@ kbd {
   border-radius: 50%;
   background: var(--muted);
 }
-.records-footer {
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--line);
-  font-size: 10px;
-  color: var(--muted);
-}
-.records-footer .text-button {
-  font-size: 10px;
-}
 .empty-records {
   display: flex;
   align-items: center;
@@ -586,8 +602,6 @@ kbd {
 }
 .scramble-text.loading {
   color: var(--muted);
-  font-family: inherit;
-  font-size: 13px;
 }
 .scramble-text > span[role="alert"] {
   white-space: normal;
@@ -721,15 +735,6 @@ kbd {
   font-weight: 400;
   white-space: nowrap;
 }
-.lower-panels {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(235px, 1fr);
-  border-top: 1px solid var(--line);
-  padding-top: 21px;
-  gap: 25px;
-  flex-shrink: 0;
-  min-height: 215px;
-}
 .panel-heading {
   display: flex;
   align-items: center;
@@ -740,17 +745,6 @@ kbd {
 }
 .panel-heading h2 {
   font-size: 11px;
-}
-.diagram-panel {
-  border-left: 1px solid var(--line);
-  padding-left: 25px;
-  min-width: 0;
-}
-.diagram {
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .diagram > div {
   height: 100%;
@@ -1320,7 +1314,7 @@ dialog::backdrop {
 .focus-mode .rail,
 .focus-mode .records-pane,
 .focus-mode .topbar,
-.focus-mode .lower-panels,
+.focus-mode .trend-panel,
 .focus-mode .app-footer,
 .focus-mode .mobile-tabs {
   display: none;
@@ -1394,12 +1388,6 @@ dialog::backdrop {
   .timer-digits {
     font-size: 160px;
   }
-  .lower-panels {
-    min-height: clamp(200px, 24dvh, 245px);
-  }
-  .diagram {
-    height: clamp(130px, 18dvh, 175px);
-  }
 }
 @media (max-width: 1100px) {
   .rail {
@@ -1424,12 +1412,12 @@ dialog::backdrop {
     width: 28px;
     height: 28px;
   }
-  .rail nav button,
+  .rail nav a,
   .rail-bottom > button {
     justify-content: center;
     padding: 10px;
   }
-  .rail nav button.active:before {
+  .rail nav a.active:before {
     left: -10px;
   }
   .topbar {
@@ -1443,18 +1431,6 @@ dialog::backdrop {
   }
   .timer-stage {
     min-height: 350px;
-  }
-  .lower-panels {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  .diagram-panel {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding: 18px 0 0;
-  }
-  .diagram {
-    height: 165px;
   }
   .timer-digits {
     font-size: 110px;
@@ -1503,7 +1479,7 @@ dialog::backdrop {
     gap: 0;
     justify-content: space-around;
   }
-  .rail nav button,
+  .rail nav a,
   .rail-bottom > button {
     display: flex;
     flex-direction: column;
@@ -1515,11 +1491,11 @@ dialog::backdrop {
     min-width: 60px;
     border-radius: 7px;
   }
-  .rail nav button span,
+  .rail nav a span,
   .rail-bottom > button span {
     display: block;
   }
-  .rail nav button.active:before {
+  .rail nav a.active:before {
     display: none;
   }
   .rail-bottom {
@@ -1692,20 +1668,6 @@ dialog::backdrop {
   .quick-stats strong {
     font-size: 14px;
   }
-  .lower-panels {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 20px;
-    padding-top: 14px;
-  }
-  .diagram-panel {
-    border: 0;
-    padding: 0 0 20px;
-    border-bottom: 1px solid var(--line);
-  }
-  .diagram {
-    height: 155px;
-  }
   .panel-heading {
     margin-bottom: 8px;
   }
@@ -1714,9 +1676,6 @@ dialog::backdrop {
   }
   .hint-button {
     min-height: 44px;
-  }
-  .trend-panel {
-    padding-bottom: 12px;
   }
   .chart-legend {
     font-size: 10px;
@@ -1989,39 +1948,15 @@ dialog::backdrop {
 
 /* Keep the primary mobile timer within the viewport; long scrambles scroll locally. */
 @media (max-width: 760px) {
-  .mobile-timer .lower-panels {
-    display: block;
-    position: absolute;
-    right: 16px;
-    bottom: 8px;
-    width: 138px;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-  }
   .mobile-timer .trend-panel {
     display: none;
-  }
-  .mobile-timer .diagram-panel {
-    padding: 0;
-    border: 0;
-  }
-  .mobile-timer .diagram-panel .panel-heading {
-    margin: 0;
-    min-height: 32px;
-  }
-  .mobile-timer .diagram-panel h2 {
-    font-size: 10px;
-  }
-  .mobile-timer .diagram {
-    height: 90px;
   }
   .mobile-timer .timer-workspace {
     position: relative;
   }
   .mobile-timer .last-actions {
     left: 0;
-    right: 140px;
+    right: 0;
     justify-content: center;
     flex-wrap: wrap;
     height: auto;
@@ -2033,14 +1968,6 @@ dialog::backdrop {
   }
   .mobile-timer .scramble-kind {
     display: none;
-  }
-}
-@media (max-width: 760px) and (max-height: 649px) {
-  .mobile-timer .lower-panels {
-    position: static;
-    width: 100%;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
   }
 }
 @media (max-width: 760px) and (min-height: 650px) {
@@ -2110,25 +2037,22 @@ dialog::backdrop {
     margin: 4px 0;
   }
 }
-@media (max-width: 760px) and (min-height: 650px) {
-  .mobile-timer .timer-status,
-  .mobile-timer .timer-touch,
-  .mobile-timer .timer-instruction {
-    position: relative;
-    top: -32px;
-  }
-}
 .practice-item {
   display: flex;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
   text-align: left;
-  width: min(100%, 620px);
   justify-content: flex-start;
   padding: 22px;
   gap: 18px;
   white-space: normal;
 }
-.practice-item + .practice-item {
-  margin-top: 12px;
+.practice-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+  max-width: 860px;
 }
 .practice-item > span:nth-child(2) {
   display: grid;
@@ -2256,7 +2180,7 @@ dialog::backdrop {
   .rail nav {
     width: 80%;
   }
-  .rail nav button,
+  .rail nav a,
   .rail-bottom > button {
     min-width: 48px;
     padding: 6px 5px;
@@ -2438,12 +2362,12 @@ dialog::backdrop {
 .timer-touch { transition: transform var(--motion-panel) var(--ease-out); }
 .timer-stage.running .timer-touch { position: relative; z-index: 8; transform: translate(var(--timer-shift-x, 0), var(--timer-shift-y, 0)); }
 .app .rail, .app .topbar, .app .mobile-tabs, .app .scramble-panel,
-.app .records-pane, .app .lower-panels, .app .app-footer,
+.app .records-pane, .app .trend-panel, .app .app-footer,
 .timer-stage .timer-status, .timer-stage .timer-instruction, .timer-stage .quick-stats, .timer-stage .timer-tools {
   transition: opacity var(--motion-quick) var(--ease-out), visibility 0s;
 }
 .is-running .rail, .is-running .topbar, .is-running .mobile-tabs, .is-running .scramble-panel,
-.is-running .records-pane, .is-running .lower-panels, .is-running .app-footer,
+.is-running .records-pane, .is-running .trend-panel, .is-running .app-footer,
 .is-running .timer-stage .timer-status, .is-running .timer-stage .timer-instruction,
 .is-running .timer-stage .quick-stats, .is-running .timer-stage .timer-tools {
   opacity: 0; visibility: hidden; pointer-events: none;
@@ -2451,7 +2375,7 @@ dialog::backdrop {
 }
 @media (prefers-reduced-motion: reduce) {
   .timer-touch, .app .rail, .app .topbar, .app .mobile-tabs, .app .scramble-panel,
-  .app .records-pane, .app .lower-panels, .app .app-footer,
+  .app .records-pane, .app .trend-panel, .app .app-footer,
   .timer-stage .timer-status, .timer-stage .timer-instruction, .timer-stage .quick-stats, .timer-stage .timer-tools { transition: none; }
 }
 @media (max-width: 760px) {
@@ -2481,8 +2405,12 @@ h1, h2, h3 { text-wrap: balance; }
 
 button { touch-action: manipulation; }
 @media (prefers-reduced-motion: no-preference) {
-  .app button { transition: transform var(--motion-press) var(--ease-out); }
-  .app button:active:not(:disabled):not(:focus-visible) { transform: scale(0.97); }
+  .app :is(button, .rail nav a, .action-link) {
+    transition: transform var(--motion-press) var(--ease-out);
+  }
+  .app :is(button, .rail nav a[href], .action-link[href]):active:not(:disabled):not(:focus-visible) {
+    transform: scale(0.97);
+  }
 }
 .app[data-pointer-motion] #main-content {
   transition: opacity var(--motion-quick) var(--ease-out);
@@ -2495,24 +2423,41 @@ button { touch-action: manipulation; }
     .app[data-pointer-motion] :is(.timer-workspace, .records-pane) { opacity: 0.85; }
   }
 }
-.app[data-pointer-motion] dialog[open] {
-  transition: opacity var(--motion-panel) var(--ease-out), transform var(--motion-panel) var(--ease-out);
-}
-.app[data-pointer-motion] dialog[open]::backdrop {
-  transition: opacity var(--motion-panel) var(--ease-out);
-}
 @starting-style {
   .app[data-pointer-motion] #main-content { opacity: 0.85; }
-  .app[data-pointer-motion] dialog[open],
-  .app[data-pointer-motion] dialog[open]::backdrop {
-    opacity: 0;
-  }
+}
+
+dialog[open] {
+  --dialog-rest: none;
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--motion-dialog) var(--ease-settle),
+    transform var(--motion-dialog) var(--ease-settle);
+}
+dialog[open]::backdrop {
+  opacity: 1;
+  transition: opacity var(--motion-dialog) var(--ease-settle);
 }
 @media (prefers-reduced-motion: no-preference) {
-  @starting-style {
-    .app[data-pointer-motion] dialog[open] { transform: scale(0.97); }
-  }
+  dialog[open] { --dialog-rest: translateY(8px) scale(0.97); }
 }
+dialog[open][data-closing] {
+  opacity: 0;
+  transform: var(--dialog-rest);
+  transition-duration: var(--motion-quick);
+}
+dialog[open][data-closing]::backdrop {
+  opacity: 0;
+  transition-duration: var(--motion-quick);
+}
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: var(--dialog-rest);
+  }
+  dialog[open]::backdrop { opacity: 0; }
+}
+
 .toast {
   pointer-events: none;
   transition: opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
@@ -2525,14 +2470,185 @@ button { touch-action: manipulation; }
   .toast[data-visible="false"] { transform: translateX(-50%); }
 }
 
-@media (min-width: 980px) and (max-width: 1100px) {
-  .lower-panels:has(.diagram-panel) {
-    grid-template-columns: minmax(0, 1.3fr) minmax(205px, 1fr);
+
+
+.scramble-viewport {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  min-height: 1.6em;
+}
+.scramble-viewport > * { grid-area: 1 / 1; }
+.scramble-text.loading { opacity: 0.2; }
+.scramble-text,
+.scramble-sequence,
+.diagram twisty-player {
+  transition: opacity var(--motion-quick) var(--ease-settle);
+}
+.scramble-progress {
+  justify-self: center;
+  pointer-events: none;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 2px 6px;
+}
+.scramble-progress:empty { visibility: hidden; }
+.scramble-refresh-icon { display: flex; }
+@media (prefers-reduced-motion: no-preference) {
+  .scramble-sequence,
+  .scramble-refresh-icon {
+    transition: opacity var(--motion-panel) var(--ease-settle),
+      transform var(--motion-panel) var(--ease-settle);
   }
-  .diagram-panel {
-    border-top: 0;
-    border-left: 1px solid var(--line);
-    padding: 0 0 0 20px;
+  .scramble-refresh[data-generating] .scramble-refresh-icon { transform: rotate(-35deg); }
+  .scramble-text.loading .scramble-sequence { transform: translateY(-4px); }
+  @starting-style {
+    .scramble-sequence { transform: translateY(5px); }
   }
 }
-.lower-panels:not(:has(.diagram-panel)) { grid-template-columns: minmax(0, 1fr); }
+@starting-style {
+  .scramble-sequence,
+  .diagram twisty-player { opacity: 0; }
+}
+
+
+.scramble-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.scramble-panel:has(.diagram-panel) {
+  grid-template-columns: minmax(0, 1fr) clamp(140px, 19vw, 210px);
+  gap: 20px;
+}
+.scramble-main { min-width: 0; }
+.diagram-panel {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--line);
+}
+.diagram-panel .panel-heading {
+  justify-content: flex-end;
+  margin: 0;
+  min-height: 0;
+}
+.diagram-mobile-label { display: none; }
+.diagram,
+.diagram-placeholder {
+  height: 84px;
+  min-width: 0;
+}
+.diagram { display: grid; }
+.trend-panel {
+  flex: 0 0 auto;
+  padding: 12px 20px 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.trend-panel .panel-heading { margin-bottom: 4px; }
+.trend-panel :is(.chart svg, .chart-empty) { height: clamp(85px, 13dvh, 125px); }
+.trend-panel .chart-legend { padding-top: 4px; }
+@media (max-width: 760px) {
+  .scramble-panel:has(.diagram-panel) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .mobile-timer .scramble-panel {
+    padding: 5px 10px 9px;
+    min-height: 0;
+  }
+  .diagram-panel {
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    padding: 4px 0 0;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--line);
+  }
+  .diagram-panel .panel-heading {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .diagram,
+  .diagram-placeholder {
+    grid-column: 1;
+    grid-row: 1;
+    height: 58px;
+  }
+  .hint-button { padding-inline: 10px; }
+  .mobile-timer .timer-stage { min-height: 230px; }
+}
+@media (max-width: 760px) and (max-height: 649px) {
+  .mobile-timer .timer-stage { padding: 12px 0; }
+}
+
+/* On phones, place the scramble diagram beneath the timer. */
+@media (max-width: 760px) {
+  .mobile-timer .scramble-panel,
+  .mobile-timer .scramble-panel:has(.diagram-panel) {
+    display: contents;
+  }
+  .mobile-timer .scramble-main {
+    flex: 0 0 auto;
+    padding: 5px 10px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    order: 0;
+  }
+  .mobile-timer .timer-stage { order: 1; }
+  .mobile-timer .diagram-panel {
+    order: 2;
+    display: block;
+    width: 138px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+  }
+  .mobile-timer .diagram-panel .panel-heading {
+    justify-content: space-between;
+    min-height: 32px;
+  }
+  .mobile-timer .diagram-mobile-label {
+    display: inline;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .mobile-timer .diagram,
+  .mobile-timer .diagram-placeholder { height: 90px; }
+}
+@media (max-width: 760px) and (min-height: 650px) {
+  .mobile-timer .diagram-panel {
+    position: absolute;
+    z-index: 1;
+    right: 16px;
+    bottom: 8px;
+  }
+  .mobile-timer .last-actions { right: 140px; }
+}
+
+
+.timer-layout {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.timer-layout :is(input, textarea, [contenteditable="true"]) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.timer-stop-surface {
+  display: none;
+}
+@media (hover: none), (pointer: coarse) {
+  .timer-stop-surface {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

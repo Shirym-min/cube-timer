@@ -15,7 +15,12 @@ assert.equal(await page.locator(".hint-popover:popover-open").count(), 1);
 assert.equal(await page.locator(".hint-popover select").count(), 0);
 let trigger = await page.locator(".hint-button").boundingBox(),
   popup = await page.locator(".hint-popover").boundingBox();
-assert.ok(Math.abs(trigger.y - (popup.y + popup.height)) <= 12);
+assert.ok(
+  Math.min(
+    Math.abs(trigger.y - (popup.y + popup.height)),
+    Math.abs(popup.y - (trigger.y + trigger.height)),
+  ) <= 12,
+);
 await page.locator(".diagram twisty-player").waitFor();
 await page.waitForTimeout(500);
 await page.screenshot({ path: "docs/screenshots/hint-popover-desktop.png" });

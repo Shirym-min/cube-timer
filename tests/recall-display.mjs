@@ -7,8 +7,8 @@ for (const viewport of [
 ]) {
   const p = await browser.newPage({ viewport });
   await p.goto("http://127.0.0.1:4173");
-  await p.getByRole("button", { name: "練習", exact: true }).click();
-  await p.getByRole("button", { name: /Recall Trainer/ }).click();
+  await p.getByRole("link", { name: "練習", exact: true }).click();
+  await p.getByRole("link", { name: /Recall Trainer/ }).click();
   await p.locator(".recall-cube svg").waitFor();
   await p.getByLabel("表示", { exact: true }).selectOption("net");
   for (const n of [2, 3, 4]) {

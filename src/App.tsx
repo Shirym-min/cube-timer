@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { randomScrambleForEvent } from "cubing/scramble";
 import {
   Box,
@@ -64,12 +64,26 @@ const SolveVideo = lazy(() =>
 );
 type ModalKind =
   "settings" | "account" | "manual" | "help" | "newSession" | null;
+const pages = ["timer", "stats", "sessions", "practice", "recall", "video"] as const;
+type Page = (typeof pages)[number];
+
+function pageFromURL(): Page {
+  const value = new URLSearchParams(location.search).get("page");
+  return pages.find((page) => page === value) ?? "timer";
+}
+
+function pageURL(page: Page) {
+  const url = new URL(location.href);
+  if (page === "timer") url.searchParams.delete("page");
+  else url.searchParams.set("page", page);
+  if (url.hash === "#main-content") url.hash = "";
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export default function App() {
   const store = useStore();
   const [selected, setSelectedState] = useState(""),
-    [page, setPage] = useState<
-      "timer" | "stats" | "sessions" | "practice" | "recall" | "video"
-    >("timer"),
+    [page, setPage] = useState(pageFromURL),
     [mobileTab, setMobileTab] = useState<"timer" | "records">("timer"),
     [modal, setModal] = useState<ModalKind>(null),
     [editing, setEditing] = useState<Solve | null>(null),
@@ -216,6 +230,39 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
   const locked = timer.active || !!pending;
+  function navigate(next: Page) {
+    if (pageFromURL() !== next) history.pushState(null, "", pageURL(next));
+    setPage(next);
+    setFocus(false);
+    if (next === "timer") setMobileTab("timer");
+  }
+
+  function followPage(e: MouseEvent<HTMLAnchorElement>, next: Page) {
+    if (locked || modal || editing) {
+      e.preventDefault();
+      return;
+    }
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    navigate(next);
+  }
+
+  useEffect(() => {
+    const onPopState = () => {
+      const next = pageFromURL();
+      if (next === page) return;
+      if (locked || modal || editing) {
+        history.replaceState(history.state, "", pageURL(page));
+        return;
+      }
+      setFocus(false);
+      setPage(next);
+      if (next === "timer") setMobileTab("timer");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [page, locked, modal, editing]);
+
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       if (
@@ -244,8 +291,7 @@ export default function App() {
       const destination = destinations[e.code as keyof typeof destinations];
       if (destination) {
         e.preventDefault();
-        setPage(destination);
-        if (destination === "timer") setMobileTab("timer");
+        navigate(destination);
       } else if (
         e.code === "KeyR" &&
         page === "timer" &&
@@ -329,13 +375,11 @@ export default function App() {
       {!locked && <a className="skip-link" href="#main-content">本文へ移動</a>}
       <aside className="rail">
         <a
-          href="#"
+          href={locked ? undefined : pageURL("timer")}
           className="brand"
           aria-label="SPLIT タイマー"
-          onClick={(e) => {
-            e.preventDefault();
-            if (!locked) setPage("timer");
-          }}
+          aria-disabled={locked || undefined}
+          onClick={(e) => followPage(e, "timer")}
         >
           <span className="brand-icon">
             <Box size={24} strokeWidth={1.7} />
@@ -353,10 +397,12 @@ export default function App() {
               ["practice", "練習", GraduationCap],
             ] as const
           ).map(([key, label, Icon]) => (
-            <button
+            <a
               key={key}
-              disabled={locked}
+              href={locked ? undefined : pageURL(key)}
+              aria-disabled={locked || undefined}
               aria-label={label}
+              title={label}
               aria-current={
                 page === key || (key === "practice" && (page === "recall" || page === "video"))
                   ? "page"
@@ -367,12 +413,12 @@ export default function App() {
                   ? "active"
                   : ""
               }
-              onClick={() => setPage(key)}
+              onClick={(e) => followPage(e, key)}
             >
               <Icon size={19} />
               <span>{label}</span>
               <kbd className="shortcut-hint nav-shortcut" aria-hidden="true">{{timer:"1",stats:"2",sessions:"3",practice:"4"}[key]}</kbd>
-            </button>
+            </a>
           ))}
         </nav>
         <div className="rail-bottom">
@@ -601,124 +647,166 @@ export default function App() {
                     </div>
                   )}
                 </div>
-                <div className="records-footer">
-                  <span>{solves.length} solves</span>
-                  <button
-                    className="text-button"
-                    disabled={locked}
-                    onClick={() => setPage("stats")}
-                  >
-                    すべての統計 <ArrowUpRight size={14} />
-                  </button>
-                </div>
               </aside>
               <div className="timer-workspace">
                 <section className="scramble-panel" aria-label="スクランブル">
-                  <div className="scramble-toolbar">
-                    <div className="event-selector">
-                      <Box size={17} />
-                      <label className="sr-only" htmlFor="event">
-                        種目
-                      </label>
-                      <select
-                        id="event"
-                        value={event}
-                        onChange={(e) =>
-                          void changeEvent(e.target.value as EventId)
-                        }
-                        disabled={locked}
-                      >
-                        {EVENTS.map(([id, label]) => (
-                          <option key={id} value={id}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="button-row">
-                      <span className="scramble-kind">WCA</span>
-                      <button
-                        className="icon-button"
-                        title="スクランブルをコピー"
-                        aria-label="スクランブルをコピー"
-                        disabled={scrambleBusy || locked}
-                        onClick={() =>
-                          navigator.clipboard
-                            .writeText(allScrambles)
-                            .then(() =>
-                              notify("スクランブルをコピーしました。"),
-                            )
-                            .catch(() => notify("コピーできませんでした。"))
-                        }
-                      >
-                        <Copy size={16} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        title="次のスクランブル"
-                        aria-label="次のスクランブル"
-                        disabled={scrambleBusy || locked}
-                        onClick={() => void generate()}
-                      >
-                        <RefreshCw size={17} />
-                        <kbd className="shortcut-hint icon-shortcut" aria-hidden="true">R</kbd>
-                      </button>
-                    </div>
-                  </div>
-                  {event === "333mbf" && (
-                    <div className="multi-controls">
-                      <label>
-                        個数{" "}
-                        <input
-                          type="number"
-                          min="2"
-                          max="100"
-                          value={multiCount}
-                          disabled={locked || scrambleBusy}
-                          onChange={(e) => {
-                            const n = Number(e.target.value);
-                            if (n >= 2 && n <= 100) setMultiCount(n);
-                          }}
-                        />
-                      </label>
-                      <label>
-                        表示{" "}
+                  <div className="scramble-main">
+                    <div className="scramble-toolbar">
+                      <div className="event-selector">
+                        <Box size={17} />
+                        <label className="sr-only" htmlFor="event">
+                          種目
+                        </label>
                         <select
-                          value={multiIndex}
-                          onChange={(e) => setMultiIndex(+e.target.value)}
+                          id="event"
+                          value={event}
+                          onChange={(e) =>
+                            void changeEvent(e.target.value as EventId)
+                          }
+                          disabled={locked}
                         >
-                          {scrambles.map((_, i) => (
-                            <option key={i} value={i}>
-                              {i + 1}
+                          {EVENTS.map(([id, label]) => (
+                            <option key={id} value={id}>
+                              {label}
                             </option>
                           ))}
                         </select>
-                      </label>
-                    </div>
-                  )}
-                  <div
-                    className={`scramble-text ${scrambleBusy ? "loading" : ""}`}
-                    aria-live="polite"
-                    aria-busy={scrambleBusy}
-                  >
-                    {scrambleBusy ? (
-                      "生成中…"
-                    ) : scrambleError ? (
-                      <span role="alert">
-                        {scrambleError}
+                      </div>
+                      <div className="button-row">
+                        <span className="scramble-kind">WCA</span>
                         <button
-                          className="text-button"
+                          className="icon-button"
+                          title="スクランブルをコピー"
+                          aria-label="スクランブルをコピー"
+                          disabled={scrambleBusy || locked}
+                          onClick={() =>
+                            navigator.clipboard
+                              .writeText(allScrambles)
+                              .then(() =>
+                                notify("スクランブルをコピーしました。"),
+                              )
+                              .catch(() => notify("コピーできませんでした。"))
+                          }
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button
+                          className="icon-button scramble-refresh"
+                          data-generating={scrambleBusy || undefined}
+                          title="次のスクランブル"
+                          aria-label="次のスクランブル"
+                          disabled={scrambleBusy || locked}
                           onClick={() => void generate()}
                         >
-                          再試行
+                          <span className="scramble-refresh-icon" aria-hidden="true">
+                            <RefreshCw size={17} />
+                          </span>
+                          <kbd className="shortcut-hint icon-shortcut" aria-hidden="true">R</kbd>
                         </button>
-                      </span>
-                    ) : (
-                      <span key={scramble} className="scramble-sequence">
-                        {scramble}
-                      </span>
+                      </div>
+                    </div>
+                    {event === "333mbf" && (
+                      <div className="multi-controls">
+                        <label>
+                          個数{" "}
+                          <input
+                            type="number"
+                            min="2"
+                            max="100"
+                            value={multiCount}
+                            disabled={locked || scrambleBusy}
+                            onChange={(e) => {
+                              const n = Number(e.target.value);
+                              if (n >= 2 && n <= 100) setMultiCount(n);
+                            }}
+                          />
+                        </label>
+                        <label>
+                          表示{" "}
+                          <select
+                            value={multiIndex}
+                            onChange={(e) => setMultiIndex(+e.target.value)}
+                          >
+                            {scrambles.map((_, i) => (
+                              <option key={i} value={i}>
+                                {i + 1}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
                     )}
+                    <div className="scramble-viewport">
+                      <div
+                        className={`scramble-text ${scrambleBusy ? "loading" : ""}`}
+                        aria-live="polite"
+                        aria-busy={scrambleBusy}
+                      >
+                        {scrambleError ? (
+                          <span role="alert">
+                            {scrambleError}
+                            <button
+                              className="text-button"
+                              onClick={() => void generate()}
+                            >
+                              再試行
+                            </button>
+                          </span>
+                        ) : scramble ? (
+                          <span
+                            key={scramble}
+                            className="scramble-sequence"
+                            aria-hidden={scrambleBusy || undefined}
+                            translate="no"
+                          >
+                            {scramble}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="scramble-progress" role="status">
+                        {scrambleBusy ? "生成中…" : ""}
+                      </span>
+                    </div>
                   </div>
+                  {store.settings.showDiagram && (
+                    <div className="diagram-panel">
+                      <div className="panel-heading">
+                        <span className="diagram-mobile-label">スクランブル</span>
+                        {["333", "333oh", "333fm"].includes(event) && (
+                          <Suspense
+                            fallback={
+                              <button className="hint-button" disabled>
+                                <Lightbulb size={15} />
+                                ヒント
+                              </button>
+                            }
+                          >
+                            <Hint
+                              scramble={scramble}
+                              face={store.settings.hintFace}
+                              kind={store.settings.hintType}
+                              disabled={
+                                locked || scrambleBusy || !!scrambleError
+                              }
+                            />
+                          </Suspense>
+                        )}
+                      </div>
+                      <Suspense
+                        fallback={
+                          <div className="diagram-placeholder">
+                            展開図を読み込み中…
+                          </div>
+                        }
+                      >
+                        {scrambleBusy || !scramble ? (
+                          <div className="diagram-placeholder" aria-hidden="true" />
+                        ) : (
+                          <Diagram event={event} scramble={scramble} />
+                        )}
+                      </Suspense>
+                    </div>
+                  )}
                 </section>
                 <TimerStage
                   key={`${session?.id}:${multiCount}`}
@@ -748,80 +836,42 @@ export default function App() {
                   focus={focus}
                   setFocus={setFocus}
                 />
-                <div className="lower-panels">
-                  <section className="trend-panel">
-                    <div className="panel-heading">
-                      <h2>タイムの推移</h2>
-                      <button
-                        className="text-button"
-                        disabled={locked}
-                        onClick={() => setPage("stats")}
-                      >
-                        統計 <ArrowUpRight size={14} />
-                      </button>
-                    </div>
-                    {timed ? (
-                      <>
-                        <Chart solves={solves} />
-                        <div className="chart-legend">
-                          <span>
-                            <i />
-                            タイム
-                          </span>
-                          <span>
-                            <i />
-                            ao5
-                          </span>
-                          <span className="muted">直近100回</span>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="muted">
-                        {event === "333fm"
-                          ? "最少手数は手数とmo3で集計します。"
-                          : "複数目隠しは成功数・挑戦数・時間を記録します。"}
-                        統計画面で確認できます。
-                      </p>
-                    )}
-                  </section>
-                  {store.settings.showDiagram && (
-                    <section className="diagram-panel">
-                      <div className="panel-heading">
-                        <h2>スクランブル</h2>
-                        {["333", "333oh", "333fm"].includes(event) && (
-                          <Suspense
-                            fallback={
-                              <button className="hint-button" disabled>
-                                <Lightbulb size={15} />
-                                ヒント
-                              </button>
-                            }
-                          >
-                            <Hint
-                              scramble={scramble}
-                              face={store.settings.hintFace}
-                              kind={store.settings.hintType}
-                              disabled={
-                                locked || scrambleBusy || !!scrambleError
-                              }
-                            />
-                          </Suspense>
-                        )}
+                <section className="trend-panel">
+                  <div className="panel-heading">
+                    <h2>タイムの推移</h2>
+                    <a
+                      className="action-link text-button"
+                      href={locked ? undefined : pageURL("stats")}
+                      aria-disabled={locked || undefined}
+                      onClick={(e) => followPage(e, "stats")}
+                    >
+                      統計 <ArrowUpRight size={14} />
+                    </a>
+                  </div>
+                  {timed ? (
+                    <>
+                      <Chart solves={solves} />
+                      <div className="chart-legend">
+                        <span>
+                          <i />
+                          タイム
+                        </span>
+                        <span>
+                          <i />
+                          ao5
+                        </span>
+                        <span className="muted">直近100回</span>
                       </div>
-                      <Suspense
-                        fallback={
-                          <div className="diagram-placeholder">
-                            展開図を読み込み中…
-                          </div>
-                        }
-                      >
-                        {!scrambleBusy && scramble && (
-                          <Diagram event={event} scramble={scramble} />
-                        )}
-                      </Suspense>
-                    </section>
+                    </>
+                  ) : (
+                    <p className="muted">
+                      {event === "333fm"
+                        ? "最少手数は手数とmo3で集計します。"
+                        : "複数目隠しは成功数・挑戦数・時間を記録します。"}
+                      統計画面で確認できます。
+                    </p>
                   )}
-                </div>
+                </section>
               </div>
             </main>
           </>
@@ -831,8 +881,7 @@ export default function App() {
               <div>
                 <h1>統計</h1>
                 <p className="muted">
-                  {session?.name} · {EVENTS.find((e) => e[0] === event)![1]} ·{" "}
-                  {solves.length}回
+                  {EVENTS.find((e) => e[0] === event)![1]}
                 </p>
               </div>
               <select
@@ -979,31 +1028,41 @@ export default function App() {
             <header className="page-heading">
               <h1>練習</h1>
             </header>
-            <button className="practice-item" onClick={() => setPage("recall")}>
-              <span className="practice-icon">
-                <GraduationCap size={23} />
-              </span>
-              <span>
-                <strong>Recall Trainer</strong>
-                <small>パターンを見て手順を練習</small>
-              </span>
-              <ChevronRight size={18} />
-            </button>
-            <button className="practice-item" onClick={() => setPage("video")}>
-              <span className="practice-icon"><Film size={23} /></span>
-              <span><strong>動画解析</strong></span>
-              <ChevronRight size={18} />
-            </button>
+            <div className="practice-options">
+              <a
+                className="action-link practice-item"
+                href={pageURL("recall")}
+                onClick={(e) => followPage(e, "recall")}
+              >
+                <span className="practice-icon">
+                  <GraduationCap size={23} />
+                </span>
+                <span>
+                  <strong>Recall Trainer</strong>
+                  <small>パターンを見て手順を練習</small>
+                </span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
+              <a
+                className="action-link practice-item"
+                href={pageURL("video")}
+                onClick={(e) => followPage(e, "video")}
+              >
+                <span className="practice-icon"><Film size={23} /></span>
+                <span><strong>動画解析</strong></span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
+            </div>
           </main>
         ) : page === "recall" ? (
           <Suspense
             fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}
           >
-            <RecallTrainer onBack={() => setPage("practice")} />
+            <RecallTrainer onBack={() => navigate("practice")} />
           </Suspense>
         ) : page === "video" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
-            <SolveVideo onBack={() => setPage("practice")} />
+            <SolveVideo onBack={() => navigate("practice")} />
           </Suspense>
         ) : (
           <main key="sessions" id="main-content" tabIndex={-1} className="page-content">
@@ -1028,7 +1087,7 @@ export default function App() {
                   current={s.id === session?.id}
                   select={() => {
                     setSelected(s.id);
-                    setPage("timer");
+                    navigate("timer");
                   }}
                   save={async (value) => {
                     await store.commit("session", s.id, value);

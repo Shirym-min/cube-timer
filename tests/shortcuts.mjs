@@ -13,7 +13,7 @@ await page.waitForFunction(
   scramble,
 );
 await page.keyboard.press("4");
-await page.getByRole("button", { name: /Recall Trainer/ }).click();
+await page.getByRole("link", { name: /Recall Trainer/ }).click();
 await page.locator("twisty-player").waitFor();
 await page.locator(".recall-stage").click({ position: { x: 10, y: 10 } });
 await page.keyboard.press("Space");
@@ -46,8 +46,8 @@ for (const viewport of [
 ]) {
   const p = await browser.newPage({ viewport, isMobile: true, hasTouch: true });
   await p.goto("http://127.0.0.1:4173");
-  await p.getByRole("button", { name: "練習", exact: true }).click();
-  await p.getByRole("button", { name: /Recall Trainer/ }).click();
+  await p.getByRole("link", { name: "練習", exact: true }).click();
+  await p.getByRole("link", { name: /Recall Trainer/ }).click();
   await p.locator("twisty-player").waitFor();
   await p.waitForTimeout(500);
   if (viewport.height >= 560)

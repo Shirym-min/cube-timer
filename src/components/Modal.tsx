@@ -13,6 +13,19 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+
+  function dismiss() {
+    const el = ref.current;
+    if (!el || el.hasAttribute("data-closing")) return;
+    el.setAttribute("data-closing", "");
+    el.inert = true;
+    void Promise.allSettled(el.getAnimations().map((animation) => animation.finished))
+      .then(() => {
+        if (ref.current !== el || !el.open) return;
+        el.close();
+        onClose();
+      });
+  }
   useEffect(() => {
     const el = ref.current!;
     el.showModal();
@@ -23,7 +36,10 @@ export function Modal({
       ref={ref}
       aria-labelledby={titleId}
       className={wide ? "wide" : ""}
-      onCancel={onClose}
+      onCancel={(e) => {
+        e.preventDefault();
+        dismiss();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           const b = e.currentTarget.getBoundingClientRect();
@@ -33,13 +49,13 @@ export function Modal({
             e.clientY < b.top ||
             e.clientY > b.bottom
           )
-            onClose();
+            dismiss();
         }
       }}
     >
       <header className="modal-header">
         <h2 id={titleId}>{title}</h2>
-        <button className="icon-button" aria-label="閉じる" onClick={onClose}>
+        <button className="icon-button" aria-label="閉じる" onClick={dismiss}>
           <X size={20} />
         </button>
       </header>

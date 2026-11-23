@@ -70,37 +70,6 @@ export function TimerStage({
     window.addEventListener('resize', position);
     return () => { window.removeEventListener('resize', position); };
   }, [timer.phase]);
-  useEffect(() => {
-    if (timer.phase !== "running") return;
-    let pointer: number | null = null;
-    const down = (e: PointerEvent) => {
-      if (e.pointerType !== "touch" || pointer !== null) return;
-      pointer = e.pointerId;
-      e.preventDefault();
-      e.stopPropagation();
-      timer.down();
-    };
-    const up = (e: PointerEvent) => {
-      if (e.pointerId !== pointer) return;
-      pointer = null;
-      e.preventDefault();
-      e.stopPropagation();
-      timer.up();
-    };
-    const cancel = (e: PointerEvent) => {
-      if (e.pointerId !== pointer) return;
-      pointer = null;
-      timer.cancelHold();
-    };
-    window.addEventListener("pointerdown", down, true);
-    window.addEventListener("pointerup", up, true);
-    window.addEventListener("pointercancel", cancel, true);
-    return () => {
-      window.removeEventListener("pointerdown", down, true);
-      window.removeEventListener("pointerup", up, true);
-      window.removeEventListener("pointercancel", cancel, true);
-    };
-  }, [timer.phase]);
   useLayoutEffect(() => onPhase(timer.phase), [timer.phase, onPhase]);
   const precision = settings.precision,
     timed = !["333fm", "333mbf"].includes(event);
@@ -141,6 +110,25 @@ export function TimerStage({
   return (
     <>
       <section className={`timer-stage ${timer.phase}`} aria-label="タイマー">
+        {timer.phase === "running" && (
+          <div
+            className="timer-stop-surface"
+            aria-hidden="true"
+            onPointerDown={(e) => {
+              if (e.button !== 0 || !e.isPrimary) return;
+              e.preventDefault();
+              e.currentTarget.setPointerCapture(e.pointerId);
+              timer.down();
+            }}
+            onPointerUp={(e) => {
+              if (!e.isPrimary) return;
+              e.preventDefault();
+              timer.up();
+            }}
+            onPointerCancel={timer.cancelHold}
+            onContextMenu={(e) => e.preventDefault()}
+          />
+        )}
         <div className="timer-tools">
           <button
             className="icon-button"
