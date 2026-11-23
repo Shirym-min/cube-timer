@@ -1,0 +1,466 @@
+.algorithm-library-heading,
+.algorithm-filters,
+.algorithm-browser,
+.algorithm-credit {
+  max-width: 1160px;
+  margin-inline: auto;
+}
+
+.algorithm-library-heading {
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+
+.algorithm-library-heading > a,
+.algorithm-source,
+.algorithm-credit a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.algorithm-filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 18px;
+}
+
+.algorithm-filters label {
+  min-width: 114px;
+  gap: 5px;
+}
+
+.algorithm-search {
+  width: min(100%, 270px);
+}
+
+.algorithm-filters .algorithm-mask-setting {
+  display: flex;
+  min-height: 42px;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.algorithm-mask-setting input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+}
+
+.algorithm-mask-setting:has(input:disabled) {
+  color: var(--muted);
+}
+
+.algorithm-browser {
+  --case-column: clamp(256px, 32%, 345px);
+  display: grid;
+  grid-template-columns: var(--case-column) minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.algorithm-browser[data-view="grid"] {
+  --case-column: clamp(256px, 43%, 485px);
+}
+
+.algorithm-cases,
+.algorithm-detail {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.algorithm-cases {
+  position: sticky;
+  top: 0;
+  padding: 10px 12px;
+}
+
+.algorithm-list-heading,
+.algorithm-detail-heading,
+.algorithm-block-heading,
+.algorithm-variant-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.algorithm-list-heading {
+  flex-wrap: wrap;
+  padding: 3px 0 9px;
+  border-bottom: 1px solid var(--line);
+}
+
+.algorithm-list-heading small {
+  margin-inline-start: 3px;
+  font-weight: 400;
+}
+
+.algorithm-view {
+  padding: 3px;
+  gap: 2px;
+}
+
+.algorithm-view button {
+  min-height: 34px;
+  padding: 4px 7px;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.algorithm-case-scroll {
+  max-height: clamp(146px, 56dvh, 690px);
+  overflow-y: auto;
+  padding: 3px;
+}
+
+.algorithm-case-group + .algorithm-case-group {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.algorithm-case-group h3,
+.algorithm-case-subgroup h4 {
+  margin: 0;
+  padding: 10px 5px 5px;
+}
+
+.algorithm-case-subgroup h4 {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.algorithm-case-list,
+.algorithm-variant-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.algorithm-case-list {
+  display: grid;
+  gap: 2px;
+}
+
+.algorithm-browser[data-view="grid"] .algorithm-case-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 80px), 1fr));
+  gap: 6px;
+}
+
+.algorithm-browser[data-view="grid"] .algorithm-case-list button {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  height: 100%;
+  padding: 7px 4px;
+  border-color: var(--line);
+  background: var(--subtle);
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.algorithm-thumbnail {
+  display: grid;
+  width: 100%;
+  height: 53px;
+  place-items: center;
+}
+
+.algorithm-thumbnail .recall-flat {
+  width: min(100%, 53px);
+  height: 100%;
+  max-height: none;
+}
+
+.algorithm-case-list button,
+.algorithm-variant-list button {
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  text-align: left;
+  transition: background-color var(--motion-panel) var(--ease-settle),
+    border-color var(--motion-panel) var(--ease-settle);
+}
+
+.algorithm-case-list button {
+  min-height: 36px;
+  padding: 6px 8px;
+  border-color: transparent;
+  font-size: 14px;
+}
+
+.algorithm-browser .algorithm-case-list button[aria-current],
+.algorithm-variant-list button[aria-pressed="true"] {
+  border-color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+.algorithm-case-list button:not([aria-current]) svg {
+  color: var(--muted);
+}
+
+.algorithm-detail {
+  padding: clamp(13px, 2.5vw, 24px);
+}
+
+.algorithm-detail-heading {
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.algorithm-detail-heading h2 {
+  font-size: clamp(21px, 3vw, 27px);
+  letter-spacing: -0.035em;
+}
+
+.algorithm-pattern {
+  display: grid;
+  grid-template-columns: minmax(120px, 32%) minmax(0, 1fr);
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--subtle);
+}
+
+.algorithm-illustration {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  padding: 14px;
+}
+
+.algorithm-illustration .recall-flat {
+  width: min(100%, 145px);
+  height: auto;
+  max-height: none;
+}
+
+.algorithm-setup {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-inline-start: 1px solid var(--line);
+}
+
+.algorithm-library code {
+  font-family: "DM Mono", monospace;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.algorithm-variants {
+  margin-top: 18px;
+}
+
+.algorithm-variants .algorithm-block-heading {
+  margin-bottom: 8px;
+}
+
+.algorithm-block-heading h3 small {
+  margin-inline-start: 4px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.algorithm-variants select {
+  min-height: 36px;
+  padding: 6px;
+  font-size: 12px;
+}
+
+.algorithm-variant-list {
+  display: grid;
+  gap: 6px;
+}
+
+.algorithm-variant-list button {
+  min-height: 45px;
+  padding: 8px 10px;
+}
+
+.algorithm-variant-list small {
+  display: grid;
+  gap: 1px;
+  flex-shrink: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.algorithm-empty {
+  padding: 22px;
+}
+
+.algorithm-credit {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (hover: hover) {
+  .algorithm-browser .algorithm-case-list button:hover,
+  .algorithm-variant-list button:hover {
+    background: var(--accent-soft);
+  }
+}
+
+@media (max-width: 760px) {
+  .page-content.algorithm-library {
+    padding-top: 15px;
+  }
+
+  .algorithm-library-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+  }
+
+  .algorithm-library-heading > a {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 44px;
+    color: var(--text);
+  }
+
+  .algorithm-library-heading > a > span {
+    display: none;
+  }
+
+  .algorithm-library-heading h1 {
+    font-size: 24px;
+  }
+
+  .algorithm-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 9px 10px;
+    margin-bottom: 12px;
+  }
+
+  .algorithm-filters > label {
+    min-width: 0;
+  }
+
+  .algorithm-filters .algorithm-search {
+    width: 100%;
+  }
+
+  .algorithm-filters .algorithm-mask-setting {
+    grid-column: 1 / -1;
+    min-height: 38px;
+  }
+
+  .algorithm-filters :is(input[type="search"], select) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .algorithm-browser {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .algorithm-cases {
+    position: static;
+    padding: 6px 9px 9px;
+  }
+
+  .algorithm-case-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .algorithm-view button {
+    min-height: 40px;
+  }
+
+  .algorithm-case-list button {
+    min-height: 44px;
+  }
+
+  .algorithm-pattern {
+    grid-template-columns: minmax(94px, 34%) minmax(0, 1fr);
+  }
+
+  .algorithm-illustration {
+    min-height: 118px;
+    padding: 8px;
+  }
+
+  .algorithm-setup {
+    padding: 9px;
+  }
+
+  .algorithm-library :is(input, select) {
+    font-size: 16px;
+  }
+
+  .algorithm-variant-actions {
+    gap: 5px;
+  }
+
+  dialog.algorithm-modal {
+    position: fixed;
+    inset: 0;
+    width: min(540px, calc(100% - 16px));
+    max-height: calc(84dvh - env(safe-area-inset-bottom));
+    max-height: min(680px, calc(84dvh - env(safe-area-inset-bottom)));
+    margin: auto auto max(8px, env(safe-area-inset-bottom));
+    border-radius: 16px;
+  }
+
+  .algorithm-modal .modal-header {
+    padding: 9px 14px;
+  }
+
+  .algorithm-modal .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .algorithm-modal .modal-body {
+    padding: 12px;
+  }
+}
+
+.algorithm-modal-source {
+  margin-top: 14px;
+}
+
+.app:not([data-pointer-motion]) .algorithm-modal[open],
+.app:not([data-pointer-motion]) .algorithm-modal[open]::backdrop {
+  transition: none;
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference) {
+  .app[data-pointer-motion] .algorithm-modal[open] {
+    --dialog-rest: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .algorithm-case-list button,
+  .algorithm-variant-list button {
+    transition: none;
+  }
+}

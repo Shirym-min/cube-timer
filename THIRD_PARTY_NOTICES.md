@@ -9,3 +9,5 @@
 Dependencies and versions are recorded in package-lock.json. Source and license notices remain available in the respective packages.
 
 - Recall Trainer case data adapted from Alg-Trainer by Tao Yu, MIT License. Source: https://github.com/tao-yu/Alg-Trainer ; the full license is in `src/data/ALGORITHM-LICENSE.txt`.
+- The additional COLL, WV, and VLS cases use the COLL, WVLS (FR), and VLS (Jayden McNeill) sets in Alg-Trainer's `js/alg_list.js`. Last-slot cases are aligned to a common front-right setup.
+- The Algorithm Library also adapts Alg-Trainer's F2L, OLL, PLL, COLL, WVLS (FR), VLS, ZBLL, and CMLL data under the same MIT License. Setups and alternatives marked as generated are computed with cubing.js. Its SpeedCubeDB links open the corresponding sets for reference.

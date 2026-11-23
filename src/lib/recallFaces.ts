@@ -3,6 +3,24 @@ import { puzzles } from "cubing/puzzles";
 import facelets from "../data/facelets.json";
 type Sticker = { x: number; y: number; color: string };
 type Face = "U" | "F" | "R" | "B" | "L";
+export const upperNeighbors: Record<Exclude<Face, "U">, readonly number[]> = {
+  F: [6, 7, 8], R: [8, 5, 2], B: [2, 1, 0], L: [0, 3, 6],
+};
+
+export function upperSlotPair(stickers: Record<Face, string[]>): Set<number> {
+  const result = new Set<number>();
+  for (let i = 0; i < 9; i++) {
+    const colors = [stickers.U[i]];
+    for (const side of ["F", "R", "B", "L"] as const) {
+      const index = upperNeighbors[side].indexOf(i);
+      if (index !== -1) colors.push(stickers[side][index]);
+    }
+    if (!colors.includes(stickers.U[4]) && colors.includes(stickers.F[4]) && colors.includes(stickers.R[4])) {
+      result.add(i);
+    }
+  }
+  return result;
+}
 const layout: Record<Face, [number, number]> = {
   U: [3.3, 0.1],
   F: [3.3, 3.3],

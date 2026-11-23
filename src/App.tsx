@@ -22,6 +22,7 @@ import {
   MoreHorizontal,
   Trash2,
   GraduationCap,
+  BookOpen,
   Film,
 } from "lucide-react";
 import { useStore } from "./lib/useStore";
@@ -62,9 +63,12 @@ const RecallTrainer = lazy(() =>
 const SolveVideo = lazy(() =>
   import("./components/SolveVideo").then((m) => ({ default: m.SolveVideo })),
 );
+const AlgorithmLibrary = lazy(() =>
+  import("./components/AlgorithmLibrary").then((m) => ({ default: m.AlgorithmLibrary })),
+);
 type ModalKind =
   "settings" | "account" | "manual" | "help" | "newSession" | null;
-const pages = ["timer", "stats", "sessions", "practice", "recall", "video"] as const;
+const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video"] as const;
 type Page = (typeof pages)[number];
 
 function pageFromURL(): Page {
@@ -355,7 +359,10 @@ export default function App() {
           .sort(compareMultiBlind)[0]
       : undefined;
   const finite = solves.map(effective).filter(Number.isFinite),
-    best = finite.length ? Math.min(...finite) : null;
+    best = finite.length ? Math.min(...finite) : null,
+    mean = finite.length ? finite.reduce((sum, time) => sum + time, 0) / finite.length : null;
+  const currentAverage = (window: number) =>
+    statsFormat(measures.find(({ n }) => n === window)?.current ?? null);
   const records = solves
     .map((s, i) => ({ s, index: i + 1 }))
     .reverse()
@@ -404,12 +411,12 @@ export default function App() {
               aria-label={label}
               title={label}
               aria-current={
-                page === key || (key === "practice" && (page === "recall" || page === "video"))
+                page === key || (key === "practice" && ["recall", "algorithms", "video"].includes(page))
                   ? "page"
                   : undefined
               }
               className={
-                page === key || (key === "practice" && (page === "recall" || page === "video"))
+                page === key || (key === "practice" && ["recall", "algorithms", "video"].includes(page))
                   ? "active"
                   : ""
               }
@@ -449,7 +456,9 @@ export default function App() {
                       ? "Recall Trainer"
                       : page === "video"
                         ? "動画解析"
-                        : "練習"}
+                        : page === "algorithms"
+                          ? "アルゴリズム集"
+                          : "練習"}
             </span>
             {(page === "timer" || page === "stats") && (
               <>
@@ -764,7 +773,6 @@ export default function App() {
                   {store.settings.showDiagram && (
                     <div className="diagram-panel">
                       <div className="panel-heading">
-                        <span className="diagram-mobile-label">スクランブル</span>
                         {["333", "333oh", "333fm"].includes(event) && (
                           <Suspense
                             fallback={
@@ -829,6 +837,32 @@ export default function App() {
                   focus={focus}
                   setFocus={setFocus}
                 />
+                <dl className="mobile-quick-stats" aria-label="セッションの統計">
+                  {(timed
+                    ? [
+                        ["ao5", currentAverage(5)],
+                        ["平均", statsFormat(mean)],
+                        ["ao12", currentAverage(12)],
+                        ["ベスト", statsFormat(best)],
+                        ["ao50", currentAverage(50)],
+                        ["ワースト", statsFormat(finite.length ? Math.max(...finite) : null)],
+                        ["ao100", currentAverage(100)],
+                        ["記録数", String(solves.length)],
+                      ]
+                    : event === "333fm"
+                      ? [
+                          ["mo3", currentAverage(3)],
+                          ["ベスト", statsFormat(best)],
+                          ["記録数", String(solves.length)],
+                        ]
+                      : [["記録数", String(solves.length)]]
+                  ).map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
                 <section className="trend-panel">
                   <div className="panel-heading">
                     <h2>タイムの推移</h2>
@@ -1038,6 +1072,15 @@ export default function App() {
               </a>
               <a
                 className="action-link practice-item"
+                href={pageURL("algorithms")}
+                onClick={(e) => followPage(e, "algorithms")}
+              >
+                <span className="practice-icon"><BookOpen size={23} /></span>
+                <span><strong>アルゴリズム集</strong></span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
+              <a
+                className="action-link practice-item"
                 href={pageURL("video")}
                 onClick={(e) => followPage(e, "video")}
               >
@@ -1052,6 +1095,13 @@ export default function App() {
             fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}
           >
             <RecallTrainer onBack={() => navigate("practice")} />
+          </Suspense>
+        ) : page === "algorithms" ? (
+          <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
+            <AlgorithmLibrary
+              practiceURL={pageURL("practice")}
+              onBack={(e) => followPage(e, "practice")}
+            />
           </Suspense>
         ) : page === "video" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>

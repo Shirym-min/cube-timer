@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { recallFaces, topColors } from "../src/lib/recallFaces";
+import { recallFaces, topColors, upperSlotPair } from "../src/lib/recallFaces";
 it("maps each chosen upper color while preserving a consistent cube color scheme", async () => {
   const expected = ["white", "yellow", "limegreen", "#26f", "orange", "red"];
   for (let i = 0; i < topColors.length; i++) {
@@ -21,4 +21,12 @@ it("applies AUF to the case and preserves the same sticker counts", async () => 
   const adjusted = await recallFaces(alg, "yellow", "U");
   expect(adjusted.F.slice(0, 3)).not.toEqual(original.F.slice(0, 3));
   expect([...adjusted.U].sort()).toEqual([...original.U].sort());
+});
+
+it("distinguishes the last-slot pair from a top-color corner with the same side colors", async () => {
+  const solved = await recallFaces("", "yellow");
+  expect(upperSlotPair(solved).has(8)).toBe(false);
+
+  const extracted = await recallFaces("R U R'", "yellow");
+  expect(upperSlotPair(extracted).size).toBeGreaterThan(0);
 });
