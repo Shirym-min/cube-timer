@@ -1,15 +1,15 @@
 import { useState, type MouseEvent } from "react";
-import { ArrowLeft, BookOpen, Copy, Settings2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Copy, ListOrdered, Repeat2, Settings2 } from "lucide-react";
 import {
   BUFFERS, ORBITS, ORBIT_LABELS, bufferLetter, generateBld,
-  generateRandomBld, loadBldScramble, memoFrames, normalizeMemo, traceMemoSteps, verifyMemo, type BldOptions, type MemoStep, type Orbit,
+  generateRandomBld, loadBldScramble, memoPreview, normalizeMemo, traceMemoSteps, verifyMemo, type BldOptions, type MemoStep, type Orbit, type PreviewMethod,
 } from "../lib/bld";
 import { formatTime } from "../lib/model";
 import { BldReview } from "./BldReview";
 import { BldSwapPreview } from "./BldSwapPreview";
-import { BldGuide } from "./BldGuide";
+import { BldGuide, BldSetup, type SetupTarget } from "./BldGuide";
 import { BldCommutator } from "./BldCommutator";
-import { BldCubeNet } from "./BldCubeNet";
+import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
 import { Diagram } from "./Diagram";
 import { Modal } from "./Modal";
 import "./BldTrainer.css";
@@ -22,6 +22,7 @@ const limits = { EDGES: 16, CORNERS: 10 };
 const emptyMemo = { EDGES: "", CORNERS: "" };
 const groupMemo = (memo: string) => memo.match(/.{1,2}/g)?.join(" ") ?? "交換なし";
 type Exercise = Awaited<ReturnType<typeof generateBld>> & { steps: Record<Orbit, MemoStep[]> };
+type PreviewSource = "answer" | "input";
 type Recall = { phase: "memo"; started: number } | { phase: "recall"; elapsed: number };
 
 export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
@@ -33,7 +34,8 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
   const [mode, setMode] = useState<"random" | "conditions">("random");
   const [options, setOptions] = useState(defaultOptions);
   const [exercise, setExercise] = useState<Exercise>();
-  const [popup, setPopup] = useState<"settings" | "letters" | "scramble" | "review" | "guide" | "commutator" | "preview">();
+  const [popup, setPopup] = useState<"settings" | "letters" | "scramble" | "review" | "guide" | "commutator" | "setup" | "preview">();
+  const [setupTarget, setSetupTarget] = useState<SetupTarget>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -42,7 +44,6 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
   const [showNet, setShowNet] = useState(() => matchMedia("(min-width: 1000px)").matches);
   const [feedback, setFeedback] = useState("");
   const [recall, setRecall] = useState<Recall>();
-  const [previewSource, setPreviewSource] = useState<"answer" | "input">("answer");
   const [scrambleInput, setScrambleInput] = useState("");
   const [scrambleInputError, setScrambleInputError] = useState("");
   const hidden = recall?.phase === "recall";
@@ -130,7 +131,6 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
         <header className="page-heading">
           <h1>BLD トレーナー</h1>
           <div className="bld-actions">
-            <button type="button" className="text-button" onClick={() => setPopup("commutator")}>3-style</button>
             <button type="button" className="text-button" onClick={() => setPopup("guide")}>
               <BookOpen size={16} aria-hidden="true" /> ガイド
             </button>
@@ -224,10 +224,7 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
                 <button type="button" className="text-button" disabled={!exercise || busy || !!recall}
                   onClick={() => setPopup("review")}>交換を振り返る</button>
                 <button type="button" className="text-button" disabled={!exercise || busy || !!recall}
-                  onClick={() => {
-                    setPreviewSource("answer");
-                    setPopup("preview");
-                  }}>交換を再生</button>
+                  onClick={() => setPopup("preview")}>交換を再生</button>
               </div>
             </form>
             <p role="status">{feedback}</p>
@@ -245,18 +242,28 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
             </div>
             {!recall && <section className="bld-inline-letters" aria-labelledby="bld-letters-title">
               <h2 id="bld-letters-title">文字の対応図</h2>
-              <BldLetters options={exercise?.options ?? options} />
+              <BldLetters options={exercise?.options ?? options} onSelect={setSetupTarget} />
             </section>}
           </section>
+        </div>
+        <div className="bld-tools">
+          <button type="button" disabled={!!recall} onClick={() => setPopup("setup")}>
+            <ListOrdered size={22} aria-hidden="true" />
+            <span>セットアップ手順</span>
+          </button>
+          <button type="button" disabled={!!recall} onClick={() => setPopup("commutator")}>
+            <Repeat2 size={22} aria-hidden="true" />
+            <span>コミュテーターを生成</span>
+          </button>
         </div>
       </div>
       {(openGuide || popup === "guide") && <BldGuide onClose={closePopup} />}
       {popup === "commutator" && <Modal title="3-style のコミュテーター" onClose={closePopup}
         className="bld-card-modal" wide><BldCommutator /></Modal>}
+      {popup === "setup" && <BldSetup onClose={closePopup} />}
       {popup === "preview" && exercise && (
         <Modal title="交換プレビュー" onClose={closePopup} className="bld-card-modal">
-          <PreviewContent key={previewSource} exercise={exercise} inputs={inputs}
-            source={previewSource} onSource={setPreviewSource} />
+          <PreviewContent exercise={exercise} inputs={inputs} />
         </Modal>
       )}
       {popup === "settings" && (
@@ -287,36 +294,63 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
         </Modal>
       )}
       {popup === "letters" && (
-        <Modal title="文字の対応図" onClose={closePopup}>
-          <BldLetters options={exercise?.options ?? options} />
+        <Modal title="文字の対応図" className="bld-card-modal" onClose={closePopup}>
+          <BldLetters options={exercise?.options ?? options} onSelect={setSetupTarget} />
         </Modal>
       )}
+      {setupTarget && <BldSetup initial={setupTarget} onClose={() => setSetupTarget(undefined)} />}
     </main>
   );
 }
 
-function PreviewContent({ exercise, inputs, source, onSource }: {
-  exercise: Exercise;
-  inputs: typeof emptyMemo;
-  source: "answer" | "input";
-  onSource: (source: "answer" | "input") => void;
-}) {
+function PreviewContent({ exercise, inputs }: { exercise: Exercise; inputs: typeof emptyMemo }) {
+  const [method, setMethod] = useState<PreviewMethod>("3-style");
+  const [source, setSource] = useState<PreviewSource>("answer");
+  const [view, setView] = useState<CubeView>("net");
+  const buffers = method === "m2-op"
+    ? { EDGES: "DF", CORNERS: "UBL" }
+    : { EDGES: exercise.options.EDGES.buffer, CORNERS: exercise.options.CORNERS.buffer };
+  const mismatchedInput = source === "input" && ORBITS.some((orbit) => buffers[orbit] !== exercise.options[orbit].buffer);
+
   function sequence(orbit: Orbit) {
-    return source === "answer" ? exercise.steps[orbit].map(({ letter }) => letter)
-      : [...normalizeMemo(inputs[orbit])];
+    if (source === "input") return [...normalizeMemo(inputs[orbit])];
+    if (buffers[orbit] === exercise.options[orbit].buffer) return exercise.steps[orbit].map(({ letter }) => letter);
+    return traceMemoSteps(exercise.pattern, orbit, buffers[orbit]).map(({ letter }) => letter);
   }
-  const sequences = { EDGES: sequence("EDGES"), CORNERS: sequence("CORNERS") };
-  let frames;
-  try {
-    frames = memoFrames(exercise.pattern, exercise.options, sequences);
-  } catch (error) {
-    return <div className="bld-section">
-      <p role="alert">{error instanceof Error ? error.message : "交換文字列を読み込めませんでした。"}</p>
-      <button type="button" onClick={() => onSource("answer")}>生成した答えを表示</button>
-    </div>;
+
+  let preview;
+  let error = "";
+  if (mismatchedInput) {
+    error = "M2・Old Pochmann で入力した文字列を再生するには、スクランブル設定でエッジを DF、コーナーを UBL に設定してから練習してください。";
+  } else {
+    try {
+      preview = memoPreview(exercise.pattern, exercise.options, { EDGES: sequence("EDGES"), CORNERS: sequence("CORNERS") }, method);
+    } catch (failure) {
+      error = failure instanceof Error ? failure.message : "交換文字列を読み込めませんでした。";
+    }
   }
-  const moves = ORBITS.flatMap((orbit) => sequences[orbit].map((letter) => ({ orbit, letter })));
-  return <BldSwapPreview frames={frames} moves={moves} source={source} onSource={onSource} />;
+
+  return <div className="bld-section">
+    <div className="bld-fields bld-preview-options">
+      <label>解法
+        <select value={method} onChange={(event) => setMethod(event.target.value as PreviewMethod)}>
+          <option value="3-style">3-style</option>
+          <option value="m2-op">M2・Old Pochmann</option>
+        </select>
+      </label>
+      <label>交換文字列
+        <select value={source} onChange={(event) => setSource(event.target.value as PreviewSource)}>
+          <option value="answer">生成した答え</option>
+          <option value="input">入力した文字列</option>
+        </select>
+      </label>
+    </div>
+    {error && <p role="alert">{error}</p>}
+    {preview && <>
+      <p className="muted bld-preview-buffers">バッファ　エッジ {buffers.EDGES}、コーナー {buffers.CORNERS}</p>
+      <BldSwapPreview key={`${method}:${source}`} {...preview} view={view} onView={setView} />
+    </>}
+  </div>;
 }
 
 function BldSettings({ options, conditions, onApply }: {
@@ -377,20 +411,25 @@ function BldSettings({ options, conditions, onApply }: {
   );
 }
 
-function BldLetters({ options }: { options: BldOptions }) {
+function BldLetters({ options, onSelect }: { options: BldOptions; onSelect: (target: SetupTarget) => void }) {
   const [orbit, setOrbit] = useState<Orbit>("EDGES");
+  const [view, setView] = useState<CubeView>("net");
   const currentBuffer = bufferLetter(orbit, options[orbit].buffer);
   return (
     <div className="bld-section">
-      <div className="segmented" role="group" aria-label="ピースの種類">
-        {ORBITS.map((item) => (
-          <button key={item} type="button" aria-pressed={orbit === item}
-            className={orbit === item ? "selected" : ""} onClick={() => setOrbit(item)}>
-            {ORBIT_LABELS[item]}
-          </button>
-        ))}
+      <div className="bld-reference-toolbar">
+        <div className="segmented" role="group" aria-label="ピースの種類">
+          {ORBITS.map((item) => (
+            <button key={item} type="button" aria-pressed={orbit === item}
+              className={orbit === item ? "selected" : ""} onClick={() => setOrbit(item)}>
+              {ORBIT_LABELS[item]}
+            </button>
+          ))}
+        </div>
+        <BldCubeViewToggle view={view} onChange={setView} views={["net", "3d"]} />
       </div>
-      <BldCubeNet orbit={orbit} selection={[currentBuffer]} />
+      <BldCubeNet view={view} orbit={orbit} buffer={currentBuffer}
+        onSelect={(letter) => onSelect({ orbit, letter, edgeBuffer: options.EDGES.buffer })} />
       <p className="muted">Speffz（バッファ {currentBuffer}）</p>
     </div>
   );

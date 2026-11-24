@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { bufferLetter, FACES, generateBld, generateCommutator, loadBldScramble, memoFrames, speffzSticker, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
+import { bufferLetter, FACES, generateBld, generateCommutator, loadBldScramble, memoFrames, memoPreview, speffzSticker, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
 
 it("maps standard Speffz buffer stickers", () => {
   expect(bufferLetter("EDGES", "UF")).toBe("C");
@@ -112,6 +112,45 @@ it("animates exact sticker transfers and resolves a generated memo to the solved
   for (const colors of Object.values(frames.at(-1)!.colors))
     expect(Object.values(colors)).toEqual(FACES.flatMap((face) => Array(4).fill(face)));
   expect(() => memoFrames(pattern, options, { EDGES: ["C"], CORNERS: [] })).toThrow("交換先");
+});
+
+it("replays paired 3-style shots and the M2/Old Pochmann algorithms through parity", async () => {
+  const options: BldOptions = {
+    EDGES: { min: 0, max: 16, breaks: "any", buffer: "DF" },
+    CORNERS: { min: 0, max: 10, breaks: "any", buffer: "UBL" },
+  };
+  const { pattern } = await loadBldScramble("R U F2 D' B2 L U2 R' F L2 D B U'", options);
+  const sequences = {
+    EDGES: [...traceMemo(pattern, "EDGES", "DF")],
+    CORNERS: [...traceMemo(pattern, "CORNERS", "UBL")],
+  };
+  expect(sequences.EDGES.length % 2).toBe(1);
+  expect(sequences.CORNERS.length % 2).toBe(1);
+  const shots = sequences.EDGES.length + sequences.CORNERS.length;
+
+  for (const method of ["3-style", "m2-op"] as const) {
+    const { frames, steps } = memoPreview(pattern, options, sequences, method);
+    expect(steps).toHaveLength(method === "3-style" ? shots / 2 : shots + 1);
+    const parity = method === "3-style" ? steps.at(-1) : steps[sequences.EDGES.length];
+    expect(parity?.label).toContain("パリティ");
+    expect(steps[0].algorithm).toEqual(method === "3-style" ? undefined : expect.any(String));
+    for (let index = 1; index < frames.length; index++) {
+      const previous = frames[index - 1];
+      const frame = frames[index];
+      const colorEntries = (item: typeof frame) => ({
+        ...Object.fromEntries(Object.entries(item.colors).flatMap(([orbit, stickers]) =>
+          Object.entries(stickers).map(([letter, color]) => [`${orbit}-${letter}`, color]))),
+        ...Object.fromEntries(FACES.map((face, index) => [`CENTER-${face}`, item.centers[index]])),
+      });
+      const before = colorEntries(previous);
+      const expected = { ...before };
+      for (const { from, to } of frame.transfers) expected[to] = before[from];
+      expect(colorEntries(frame)).toEqual(expected);
+    }
+    expect(frames.at(-1)!.centers).toEqual(FACES);
+    for (const colors of Object.values(frames.at(-1)!.colors))
+      expect(Object.values(colors)).toEqual(FACES.flatMap((face) => Array(4).fill(face)));
+  }
 });
 
 it("generates a commutator that cycles the selected oriented stickers and preserves every other piece", async () => {

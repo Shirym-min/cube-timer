@@ -6,14 +6,16 @@ import {
   m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, opEdgeSetups, opParity, tPerm, yPerm,
 } from "../lib/bldMethods";
 import { BldHighlightCube, type Highlight } from "./BldHighlightCube";
-import { BldCubeNet } from "./BldCubeNet";
-import { BldCommutator } from "./BldCommutator";
+import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
 import { Modal } from "./Modal";
 import "./AlgorithmLibrary.css";
 import "./BldTrainer.css";
 
-const methods = ["M2 法", "Old Pochmann 法", "3-style"] as const;
+const setupMethods = ["M2 法", "Old Pochmann 法"] as const;
+const methods = [...setupMethods, "3-style"] as const;
+type SetupMethod = (typeof setupMethods)[number];
 type Method = (typeof methods)[number];
+export type SetupTarget = { orbit: Orbit; letter: string; edgeBuffer: string };
 type GuideCase = {
   title: string;
   highlights: Highlight[];
@@ -46,7 +48,7 @@ function setups(orbit: Orbit, buffer: string, base: string, entries: Record<stri
   }));
 }
 
-const groups: Record<Method, Group[]> = {
+const groups: Record<SetupMethod, Group[]> = {
   "M2 法": [
     { title: "エッジのセットアップ", cases: setups("EDGES", "U", "M2", m2Setups) },
     {
@@ -73,26 +75,44 @@ const groups: Record<Method, Group[]> = {
       explanation: "交換数が奇数のときは、エッジの後、コーナーの前に回します。エッジに M2 法を使う場合は M2 法のパリティ手順を使います。",
     }] },
   ],
-  "3-style": [
-    { title: "セットアップ", cases: [
-      { title: "エッジの3サイクル", highlights: marks("EDGES", "CAB"),
-        explanation: "エッジのバッファと2つの対象ステッカーを、順番と向きを保てる基本形に移します。同じエッジを指す2文字には反転手順を使います。" },
-      { title: "コーナーの3サイクル", highlights: marks("CORNERS", "ABC"),
-        explanation: "コーナーのバッファと2つの対象を、どの面のステッカーを指すかまで確認して基本形に移します。同じコーナーを指す2文字にはねじれ手順を使います。" },
-    ] },
-  ],
 };
 
+function letterCase(method: SetupMethod, orbit: Orbit, letter: string): GuideCase {
+  return groups[method].flatMap((group) => group.cases).find((item) =>
+    item.orbit === orbit && item.letter === letter) ?? {
+    title: `${letter} · ${speffzSticker(orbit, letter).position}`,
+    highlights: marks(orbit, letter), orbit, letter,
+    explanation: "このステッカーはバッファのピースにあります。",
+  };
+}
+
 export function BldGuide({ onClose }: { onClose: () => void }) {
-  const [method, setMethod] = useState<Method>("M2 法");
-  const [selected, setSelected] = useState<GuideCase>();
-  const [showDetail, setShowDetail] = useState(false);
-  const [view, setView] = useState<"list" | "net">("list");
-  const [orbit, setOrbit] = useState<Orbit>("EDGES");
+  const [method, setMethod] = useState<Method>("3-style");
+  return <Modal title="BLD ガイド" onClose={onClose} className="bld-guide-modal bld-card-modal">
+    <div className="bld-section">
+      <div className="segmented" role="group" aria-label="解法">
+        {methods.map((item) => <button key={item} type="button" aria-pressed={method === item}
+          className={method === item ? "selected" : ""} onClick={() => setMethod(item)}>{item}</button>)}
+      </div>
+      <Overview method={method} />
+    </div>
+  </Modal>;
+}
+
+export function BldSetup({ initial, onClose }: { initial?: SetupTarget; onClose: () => void }) {
+  const [method, setMethod] = useState<SetupMethod>(
+    initial && (initial.orbit === "CORNERS" || initial.edgeBuffer === "UR" ||
+      (initial.edgeBuffer === "UF" && "UK".includes(initial.letter))) ? "Old Pochmann 法" : "M2 法",
+  );
+  const [selected, setSelected] = useState<GuideCase | undefined>(() =>
+    initial && letterCase(method, initial.orbit, initial.letter),
+  );
+  const [showDetail, setShowDetail] = useState(!!initial);
+  const [view, setView] = useState<CubeView | "list">(initial ? "net" : "list");
+  const [orbit, setOrbit] = useState<Orbit>(initial?.orbit ?? "EDGES");
   const compact = useSyncExternalStore(subscribeViewport, compactViewport);
-  const trigger = useRef<HTMLButtonElement | null>(null);
+  const trigger = useRef<HTMLElement | null>(null);
   const back = useRef<HTMLButtonElement>(null);
-  const netCases = groups[method].flatMap((group) => group.cases).filter((item) => item.orbit === orbit);
 
   function choose(item: GuideCase, button?: HTMLButtonElement) {
     trigger.current = button ?? (document.activeElement instanceof HTMLButtonElement ? document.activeElement : null);
@@ -103,43 +123,40 @@ export function BldGuide({ onClose }: { onClose: () => void }) {
 
   function returnToList() {
     setShowDetail(false);
-    requestAnimationFrame(() => trigger.current?.focus());
+    requestAnimationFrame(() => (trigger.current ?? document.querySelector<HTMLSelectElement>("#bld-setup-method"))?.focus());
   }
 
   return (
-    <Modal title="BLD ガイド" onClose={onClose} wide className="bld-guide-modal bld-card-modal">
+    <Modal title="セットアップ手順" onClose={onClose} wide className="bld-guide-modal bld-card-modal">
       <div className="bld-guide-layout">
         <div hidden={compact && showDetail}>
           <div className="bld-guide-toolbar">
             <label>解法
-              <select value={method} onChange={(event) => {
-                setMethod(event.target.value as Method);
-                setSelected(undefined);
-                setOrbit("EDGES");
+              <select id="bld-setup-method" value={method} onChange={(event) => {
+                const next = event.target.value as SetupMethod;
+                setMethod(next);
+                if (orbit === "CORNERS" && next === "M2 法") {
+                  setOrbit("EDGES");
+                  setSelected(undefined);
+                } else {
+                  setSelected(selected?.orbit === orbit && selected.letter ? letterCase(next, orbit, selected.letter) : undefined);
+                }
               }}>
-                {methods.map((item) => <option key={item}>{item}</option>)}
+                {setupMethods.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
-            {method !== "3-style" && <div className="segmented" role="group" aria-label="手順の探し方">
-              <button type="button" aria-pressed={view === "list"} className={view === "list" ? "selected" : ""} onClick={() => setView("list")}>一覧</button>
-              <button type="button" aria-pressed={view === "net"} className={view === "net" ? "selected" : ""} onClick={() => setView("net")}>展開図</button>
-            </div>}
+            <BldCubeViewToggle view={view} onChange={setView} views={["list", "net", "3d"]} />
           </div>
           <div className="algorithm-browser">
             <section className="algorithm-cases" aria-label="手順一覧">
-              {compact && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
-              {view === "net" && method !== "3-style" ? (
+              {view !== "list" ? (
                 <div className="bld-section bld-guide-map">
                   {method === "Old Pochmann 法" && <div className="segmented" role="group" aria-label="ピースの種類">
                     <button type="button" aria-pressed={orbit === "EDGES"} className={orbit === "EDGES" ? "selected" : ""} onClick={() => setOrbit("EDGES")}>エッジ</button>
                     <button type="button" aria-pressed={orbit === "CORNERS"} className={orbit === "CORNERS" ? "selected" : ""} onClick={() => setOrbit("CORNERS")}>コーナー</button>
                   </div>}
-                  <BldCubeNet orbit={orbit} selection={selected?.orbit === orbit && selected.letter ? [selected.letter] : []}
-                    disabled={(letter) => !netCases.some((item) => item.letter === letter)}
-                    onSelect={(letter) => {
-                      const item = netCases.find((entry) => entry.letter === letter);
-                      if (item) choose(item);
-                    }} />
+                  <BldCubeNet view={view} orbit={orbit} selection={selected?.orbit === orbit && selected.letter ? [selected.letter] : []}
+                    onSelect={(letter) => choose(letterCase(method, orbit, letter))} />
                   <button type="button" onClick={(event) => choose(groups[method].at(-1)!.cases[0], event.currentTarget)}>パリティ処理</button>
                 </div>
               ) : (
@@ -150,7 +167,7 @@ export function BldGuide({ onClose }: { onClose: () => void }) {
                       <ul className="algorithm-case-list">
                         {group.cases.map((item) => (
                           <li key={item.title}>
-                            <button type="button" aria-current={selected === item ? "true" : undefined}
+                            <button type="button" aria-current={selected?.title === item.title ? "true" : undefined}
                               onClick={(event) => choose(item, event.currentTarget)}>
                               {item.title}<ChevronRight size={15} aria-hidden="true" />
                             </button>
@@ -164,21 +181,17 @@ export function BldGuide({ onClose }: { onClose: () => void }) {
             </section>
             {!compact && (
               <section className="algorithm-detail">
-                {selected ? <CaseDetail key={selected.title} item={selected} showTitle /> : <Overview method={method} />}
-                {selected && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
+                {selected ? <CaseDetail key={selected.title} item={selected} /> : <p className="muted">確認する文字かパリティ処理を選んでください。</p>}
               </section>
             )}
           </div>
-          {method === "3-style" && <details className="bld-guide-overview">
-            <summary>コミュテーターを生成</summary><BldCommutator />
-          </details>}
         </div>
         {compact && showDetail && selected && (
           <div className="bld-section">
             <button ref={back} type="button" className="text-button bld-back" onClick={returnToList}>
               <ArrowLeft size={16} aria-hidden="true" /> 手順の選択に戻る
             </button>
-            <CaseDetail key={selected.title} item={selected} showTitle />
+            <CaseDetail key={selected.title} item={selected} />
           </div>
         )}
       </div>
@@ -186,23 +199,21 @@ export function BldGuide({ onClose }: { onClose: () => void }) {
   );
 }
 
-function CaseDetail({ item, showTitle }: { item: GuideCase; showTitle?: boolean }) {
+function CaseDetail({ item }: { item: GuideCase }) {
   const { setup, alg, evenAlg } = item;
   const undo = setup ? new Alg(setup).invert().toString().replace(/2'(?= |$)/g, "2") : "";
   return (
     <div className="bld-guide-detail">
-      {showTitle && <h2>{item.title}</h2>}
+      <h2>{item.title}</h2>
       <BldHighlightCube highlights={item.highlights} />
       {item.explanation && <p>{item.explanation}</p>}
-      {alg ? (
+      {alg && (
         <dl className="bld-guide-steps">
           {setup !== undefined && <div><dt>セットアップ</dt><dd><code translate="no">{setup || "なし"}</code></dd></div>}
           <div><dt>{evenAlg ? "奇数番目" : setup === undefined ? "手順" : "基本手順"}</dt><dd><code translate="no">{alg}</code></dd></div>
           {evenAlg && <div><dt>偶数番目</dt><dd><code translate="no">{evenAlg}</code></dd></div>}
           {setup !== undefined && <div><dt>セットアップを戻す</dt><dd><code translate="no">{undo || "なし"}</code></dd></div>}
         </dl>
-      ) : (
-        <p>3D 図は対象ステッカーの配置例です。対象に合わせて <code>S</code> で基本形に移し、基本手順 <code>A</code> を回してから <code>S′</code> で戻します。</p>
       )}
     </div>
   );
@@ -211,7 +222,6 @@ function CaseDetail({ item, showTitle }: { item: GuideCase; showTitle?: boolean 
 function Overview({ method }: { method: Method }) {
   return (
     <div className="bld-guide-detail">
-      <h2>{method}</h2>
       {method === "M2 法" ? (
         <>
           <p>エッジを1文字ずつ処理します。DF の D 面（U）がバッファ、UB の U 面（A）が基本交換先です。コーナーは Old Pochmann 法と組み合わせられます。</p>

@@ -1,7 +1,9 @@
+import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { cube3x3x3 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
 import { experimentalSolve3x3x3IgnoringCenters } from "cubing/search";
+import { m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, yPerm } from "./bldMethods";
 
 export type Orbit = "EDGES" | "CORNERS";
 export type Breaks = "any" | "none" | "required";
@@ -197,35 +199,55 @@ export const cubeNetCells = {
 };
 
 export type CubeFace = (typeof FACES)[number];
+type Transfer = { from: string; to: string };
+type MemoMove = { orbit: Orbit; letter: string };
+type Sequences = Record<Orbit, string[]>;
 export type MemoFrame = {
   colors: Record<Orbit, Record<string, CubeFace>>;
-  transfers: { from: string; to: string }[];
+  centers: CubeFace[];
+  transfers: Transfer[];
 };
+export type PreviewMethod = "3-style" | "m2-op";
+export type PreviewStep = { label: string; orbit?: Orbit; algorithm?: string };
 
-export function memoFrames(pattern: KPattern, options: BldOptions, sequences: Record<Orbit, string[]>) {
-  const state = { EDGES: clone(pattern.patternData.EDGES), CORNERS: clone(pattern.patternData.CORNERS) };
+function memoFrame(state: Record<string, Pieces>, centers: CubeFace[], transfers: Transfer[]): MemoFrame {
   function colors(orbit: Orbit): Record<string, CubeFace> {
     const size = orientationCount(orbit);
+    const source = state[orbit];
     return Object.fromEntries(letters[orbit].map(({ letter, piece, sticker }) => {
-      const source = state[orbit];
       const face = pieceOrder[orbit][source.pieces[piece]][mod(sticker + source.orientation[piece], size)];
       return [letter, face as CubeFace];
     }));
   }
-  const frame = (transfers: MemoFrame["transfers"]): MemoFrame => ({
-    colors: { EDGES: colors("EDGES"), CORNERS: colors("CORNERS") },
-    transfers,
+  return { colors: { EDGES: colors("EDGES"), CORNERS: colors("CORNERS") }, centers, transfers };
+}
+
+function memoTarget(orbit: Orbit, buffer: number, letter: string) {
+  const target = letters[orbit].find((entry) => entry.letter === letter);
+  if (!target || target.piece === buffer)
+    throw Error(`${ORBIT_LABELS[orbit]}の「${letter}」は交換先に指定できません。`);
+  return target;
+}
+
+function composeTransfers(parts: Transfer[][]): Transfer[] {
+  const maps = parts.map((transfers) => new Map(transfers.map(({ from, to }) => [from, to])));
+  const positions = new Set(parts.flatMap((transfers) => transfers.map(({ from }) => from)));
+  return [...positions].flatMap((from) => {
+    const to = maps.reduce((position, map) => map.get(position) ?? position, from);
+    return from === to ? [] : [{ from, to }];
   });
-  const frames = [frame([])];
-  for (const orbit of ORBITS) {
-    const buffer = pieceOrder[orbit].indexOf(options[orbit].buffer);
-    const size = orientationCount(orbit);
-    const bufferStickers = letters[orbit].filter(({ piece }) => piece === buffer);
-    for (const letter of sequences[orbit]) {
-      const target = letters[orbit].find((entry) => entry.letter === letter);
-      if (!target || target.piece === buffer)
-        throw Error(`${ORBIT_LABELS[orbit]}の「${letter}」は交換先に指定できません。`);
-      const transfers = bufferStickers.flatMap((bufferSticker) => {
+}
+
+function swapFrames(pattern: KPattern, options: BldOptions, groups: MemoMove[][]) {
+  const state = { EDGES: clone(pattern.patternData.EDGES), CORNERS: clone(pattern.patternData.CORNERS) };
+  const centers = pattern.patternData.CENTERS.pieces.map((piece) => FACES[piece]);
+  const frames = [memoFrame(state, centers, [])];
+  for (const group of groups) {
+    const parts = group.map(({ orbit, letter }) => {
+      const buffer = pieceOrder[orbit].indexOf(options[orbit].buffer);
+      const size = orientationCount(orbit);
+      const target = memoTarget(orbit, buffer, letter);
+      const transfers = letters[orbit].filter(({ piece }) => piece === buffer).flatMap((bufferSticker) => {
         const targetSticker = letters[orbit].find(({ piece, sticker }) => piece === target.piece &&
           sticker === mod(bufferSticker.sticker + target.sticker, size))!;
         const from = `${orbit}-${bufferSticker.letter}`;
@@ -233,10 +255,86 @@ export function memoFrames(pattern: KPattern, options: BldOptions, sequences: Re
         return [{ from, to }, { from: to, to: from }];
       });
       swap(state[orbit], buffer, target, size);
-      frames.push(frame(transfers));
-    }
+      return transfers;
+    });
+    frames.push(memoFrame(state, centers, composeTransfers(parts)));
   }
   return frames;
+}
+
+export function memoFrames(pattern: KPattern, options: BldOptions, sequences: Sequences) {
+  return swapFrames(pattern, options, ORBITS.flatMap((orbit) => sequences[orbit].map((letter) => [{ orbit, letter }])));
+}
+
+function describeMoves(orbit: Orbit, targets: string[]): string {
+  return `${ORBIT_LABELS[orbit]} ${targets.join(" → ")}`;
+}
+
+function threeStylePreview(pattern: KPattern, options: BldOptions, sequences: Sequences) {
+  const parity = sequences.EDGES.length % 2 === 1 && sequences.CORNERS.length % 2 === 1;
+  const groups: MemoMove[][] = [];
+  const steps: PreviewStep[] = [];
+  for (const orbit of ORBITS) {
+    const targets = parity ? sequences[orbit].slice(0, -1) : sequences[orbit];
+    for (let index = 0; index < targets.length; index += 2) {
+      const pair = targets.slice(index, index + 2);
+      groups.push(pair.map((letter) => ({ orbit, letter })));
+      steps.push({ orbit, label: describeMoves(orbit, pair) });
+    }
+  }
+  if (parity) {
+    const moves = ORBITS.map((orbit) => ({ orbit, letter: sequences[orbit].at(-1)! }));
+    groups.push(moves);
+    steps.push({ label: `パリティ（${moves.map(({ orbit, letter }) => describeMoves(orbit, [letter])).join("、")}）` });
+  }
+  return { frames: swapFrames(pattern, options, groups), steps };
+}
+
+function setupShot(setup: string, base: string) {
+  const prefix = new Alg(setup);
+  return prefix.concat(new Alg(base)).concat(prefix.invert()).toString();
+}
+
+function m2OpPreview(pattern: KPattern, sequences: Sequences) {
+  const steps: PreviewStep[] = [];
+  for (const [index, letter] of sequences.EDGES.entries()) {
+    memoTarget("EDGES", pieceOrder.EDGES.indexOf("DF"), letter);
+    const effective = index % 2 === 1 ? m2Even[letter] ?? letter : letter;
+    steps.push({ orbit: "EDGES", label: describeMoves("EDGES", [letter]),
+      algorithm: m2Special[effective] ?? setupShot(m2Setups[effective], "M2") });
+  }
+  if (sequences.EDGES.length % 2 === 1) steps.push({ label: "M2 のパリティ処理", algorithm: m2Parity });
+  for (const letter of sequences.CORNERS) {
+    memoTarget("CORNERS", pieceOrder.CORNERS.indexOf("UBL"), letter);
+    steps.push({ orbit: "CORNERS", label: describeMoves("CORNERS", [letter]),
+      algorithm: setupShot(opCornerSetups[letter], yPerm) });
+  }
+
+  const centerColors = (state: KPattern) => state.patternData.CENTERS.pieces.map((piece) => FACES[piece]);
+  const frames = [memoFrame(pattern.patternData, centerColors(pattern), [])];
+  let state = pattern;
+  for (const { algorithm } of steps) {
+    const transformation = pattern.kpuzzle.algToTransformation(algorithm!);
+    const transfers = ORBITS.flatMap((orbit) => {
+      const { permutation, orientationDelta } = transformation.transformationData[orbit];
+      const size = orientationCount(orbit);
+      return letters[orbit].flatMap(({ piece, sticker, letter: dest }) => {
+        const source = letters[orbit].find((entry) => entry.piece === permutation[piece] &&
+          entry.sticker === mod(sticker + orientationDelta[piece], size))!.letter;
+        return source === dest ? [] : [{ from: `${orbit}-${source}`, to: `${orbit}-${dest}` }];
+      });
+    });
+    transformation.transformationData.CENTERS.permutation.forEach((source, dest) => {
+      if (source !== dest) transfers.push({ from: `CENTER-${FACES[source]}`, to: `CENTER-${FACES[dest]}` });
+    });
+    state = state.applyTransformation(transformation);
+    frames.push(memoFrame(state.patternData, centerColors(state), transfers));
+  }
+  return { frames, steps };
+}
+
+export function memoPreview(pattern: KPattern, options: BldOptions, sequences: Sequences, method: PreviewMethod) {
+  return method === "3-style" ? threeStylePreview(pattern, options, sequences) : m2OpPreview(pattern, sequences);
 }
 
 const commutators = { EDGES: "[M', U2]", CORNERS: "[R' D' R, U]" };
