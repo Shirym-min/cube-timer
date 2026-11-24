@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { Maximize2, X } from "lucide-react";
 import { LastSolveActions } from "./LastSolveActions";
 import { useTimer, type Phase } from "../lib/useTimer";
@@ -57,7 +57,7 @@ export function TimerStage({
     onFinish,
   );
   const touchRef = useRef<HTMLDivElement>(null);
-  const surfacePress = useRef<{ x: number; y: number } | null>(null);
+  const surfacePress = useRef<{ id: number; x: number; y: number } | null>(null);
   const running = timer.phase === "running";
   useLayoutEffect(() => {
     const element = touchRef.current;
@@ -74,7 +74,10 @@ export function TimerStage({
     window.addEventListener('resize', position);
     return () => { window.removeEventListener('resize', position); };
   }, [timer.phase]);
-  useLayoutEffect(() => onPhase(timer.phase), [timer.phase, onPhase]);
+  useLayoutEffect(() => {
+    if (timer.phase === "stopped") surfacePress.current = null;
+    onPhase(timer.phase);
+  }, [timer.phase, onPhase]);
   const precision = settings.precision,
     timed = !["333fm", "333mbf"].includes(event);
   const statsFormat = (n: number | null) =>
@@ -103,6 +106,42 @@ export function TimerStage({
         : timer.inspecting
           ? "インスペクション"
           : "";
+  function press(event: PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || !event.isPrimary || surfacePress.current) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    surfacePress.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    timer.down();
+  }
+
+  function cancelPress(event: PointerEvent<HTMLDivElement>) {
+    if (surfacePress.current?.id !== event.pointerId) return;
+    surfacePress.current = null;
+    timer.cancelHold();
+  }
+
+  function movePress(event: PointerEvent<HTMLDivElement>) {
+    const start = surfacePress.current;
+    if (event.pointerType !== "touch" || start?.id !== event.pointerId || running || timer.inspecting) return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 44) cancelPress(event);
+  }
+
+  function release(event: PointerEvent<HTMLDivElement>) {
+    if (surfacePress.current?.id !== event.pointerId) return;
+    event.preventDefault();
+    surfacePress.current = null;
+    timer.up();
+  }
+
+  const gestures = {
+    onPointerDown: press,
+    onPointerMove: movePress,
+    onPointerUp: release,
+    onPointerCancel: cancelPress,
+    onLostPointerCapture: cancelPress,
+    onContextMenu: (event: MouseEvent) => event.preventDefault(),
+  };
+
   return (
     <>
       <section className={`timer-stage ${timer.phase}`} aria-label="タイマー">
@@ -110,37 +149,11 @@ export function TimerStage({
           <div
             className={running ? "timer-stop-surface" : "timer-start-surface"}
             aria-hidden="true"
-            onPointerDown={(e) => {
-              if (e.button !== 0 || !e.isPrimary) return;
-              e.preventDefault();
-              e.currentTarget.setPointerCapture(e.pointerId);
-              if (!running) surfacePress.current = { x: e.clientX, y: e.clientY };
-              timer.down();
-            }}
-            onPointerMove={(e) => {
-              const start = surfacePress.current;
-              if (!e.isPrimary || !start) return;
-              if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 16) {
-                surfacePress.current = null;
-                timer.cancelHold();
-              }
-            }}
-            onPointerUp={(e) => {
-              if (!e.isPrimary || (!running && !surfacePress.current)) return;
-              e.preventDefault();
-              surfacePress.current = null;
-              timer.up();
-            }}
-            onLostPointerCapture={(e) => {
-              if (!e.isPrimary || (!running && !surfacePress.current)) return;
-              surfacePress.current = null;
-              timer.cancelHold();
-            }}
-            onContextMenu={(e) => e.preventDefault()}
+            {...gestures}
           />
         )}
         <div className="timer-tools">
-          <button type="button" className="text-button" onClick={manualMode} disabled={!enabled}>
+          <button type="button" className="text-button" onClick={manualMode} disabled={!enabled || timer.active}>
             手入力
           </button>
           <button
@@ -172,19 +185,7 @@ export function TimerStage({
                 timer.up();
               }
             }}
-            onPointerDown={(e) => {
-              if (e.button !== 0 || !e.isPrimary) return;
-              e.preventDefault();
-              e.currentTarget.setPointerCapture(e.pointerId);
-              timer.down();
-            }}
-            onPointerUp={(e) => {
-              if (!e.isPrimary) return;
-              e.preventDefault();
-              timer.up();
-            }}
-            onPointerCancel={timer.cancelHold}
-            onContextMenu={(e) => e.preventDefault()}
+            {...gestures}
           >
             {showClock ? (
               <RunningTime startedAt={timer.startedAt} precision={precision} />

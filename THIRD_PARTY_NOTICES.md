@@ -4,7 +4,6 @@
 - React / React DOM — MIT. https://github.com/facebook/react
 - Supabase JS — MIT. https://github.com/supabase/supabase-js
 - Lucide icons — ISC. https://github.com/lucide-icons/lucide
-- Space Grotesk and DM Mono — SIL Open Font License 1.1. Distributed by @fontsource. License texts are included in each installed font package.
 
 Dependencies and versions are recorded in package-lock.json. Source and license notices remain available in the respective packages.
 

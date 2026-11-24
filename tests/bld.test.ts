@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { bufferLetter, generateBld, loadBldScramble, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
+import { bufferLetter, FACES, generateBld, generateCommutator, loadBldScramble, memoFrames, speffzSticker, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
 
 it("maps standard Speffz buffer stickers", () => {
   expect(bufferLetter("EDGES", "UF")).toBe("C");
@@ -90,4 +90,56 @@ it("loads pasted face turns and identifies a separate cycle in the review", asyn
     expect(verifyMemo(pattern, orbit, buffer, steps.map(({ letter }) => letter).join(""))).toBe(0);
   }
   await expect(loadBldScramble("U Invalid", options)).rejects.toThrow("面回転");
+});
+
+it("animates exact sticker transfers and resolves a generated memo to the solved colors", async () => {
+  const options: BldOptions = {
+    EDGES: { min: 0, max: 16, breaks: "any", buffer: "UF" },
+    CORNERS: { min: 0, max: 10, breaks: "any", buffer: "UBL" },
+  };
+  const { pattern } = await loadBldScramble("F R U D'", options);
+  const sequences = {
+    EDGES: [...traceMemo(pattern, "EDGES", "UF")],
+    CORNERS: [...traceMemo(pattern, "CORNERS", "UBL")],
+  };
+  const frames = memoFrames(pattern, options, sequences);
+  expect(frames.length).toBe(1 + sequences.EDGES.length + sequences.CORNERS.length);
+  for (let index = 1; index < frames.length; index++)
+    for (const { from, to } of frames[index].transfers) {
+      const [orbit, letter] = from.split("-") as ["EDGES" | "CORNERS", string];
+      expect(frames[index].colors[orbit][to.split("-")[1]]).toBe(frames[index - 1].colors[orbit][letter]);
+    }
+  for (const colors of Object.values(frames.at(-1)!.colors))
+    expect(Object.values(colors)).toEqual(FACES.flatMap((face) => Array(4).fill(face)));
+  expect(() => memoFrames(pattern, options, { EDGES: ["C"], CORNERS: [] })).toThrow("交換先");
+});
+
+it("generates a commutator that cycles the selected oriented stickers and preserves every other piece", async () => {
+  const { cube3x3x3 } = await import("cubing/puzzles");
+  const cube = await cube3x3x3.kpuzzle();
+  for (const [orbit, chosen] of [
+    ["EDGES", ["A", "N", "K"]],
+    ["EDGES", ["W", "H", "J"]],
+    ["CORNERS", ["E", "K", "W"]],
+    ["CORNERS", ["X", "C", "F"]],
+  ] as const) {
+    const targets = chosen.map((letter) => speffzSticker(orbit, letter));
+    const { alg } = await generateCommutator(orbit, [...chosen]);
+    const data = cube.algToTransformation(alg).transformationData;
+    const size = orbit === "EDGES" ? 2 : 3;
+    for (const [index, target] of targets.entries()) {
+      const next = targets[(index + 1) % 3];
+      expect(data[orbit].permutation[next.piece]).toBe(target.piece);
+      expect((next.sticker + data[orbit].orientationDelta[next.piece]) % size).toBe(target.sticker);
+    }
+    for (const [kind, orbitData] of Object.entries(data)) {
+      orbitData.permutation.forEach((piece, index) => {
+        if (kind !== orbit || !targets.some((target) => target.piece === index)) {
+          expect(piece).toBe(index);
+          if (kind !== "CENTERS") expect(orbitData.orientationDelta[index]).toBe(0);
+        }
+      });
+    }
+  }
+  await expect(generateCommutator("EDGES", ["A", "Q", "C"])).rejects.toThrow("異なる3つ");
 });

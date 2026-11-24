@@ -64,7 +64,6 @@ const RecallTrainer = lazy(() =>
   })),
 );
 const BldTrainer = lazy(() => import("./components/BldTrainer").then((m) => ({ default: m.BldTrainer })));
-const BldGuide = lazy(() => import("./components/BldGuide").then((m) => ({ default: m.BldGuide })));
 const SolveVideo = lazy(() =>
   import("./components/SolveVideo").then((m) => ({ default: m.SolveVideo })),
 );
@@ -502,7 +501,7 @@ export default function App() {
                         : page === "algorithms"
                           ? "アルゴリズム集"
                           : page === "bld" ? "BLD トレーナー"
-                            : page === "bld-guide" ? "BLD ガイド" : "練習"}
+                            : "練習"}
             </span>
             {(page === "timer" || page === "stats") && (
               <>
@@ -1214,12 +1213,9 @@ export default function App() {
           </Suspense>
         ) : page === "bld" || page === "bld-guide" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
-            <BldTrainer active={page === "bld"}
+            <BldTrainer openGuide={page === "bld-guide"}
               backURL={pageURL("practice")} onBack={(e) => followPage(e, "practice")}
-              guideURL={pageURL("bld-guide")} onGuide={(e) => followPage(e, "bld-guide")} />
-            {page === "bld-guide" && (
-              <BldGuide backURL={pageURL("bld")} onBack={(e) => followPage(e, "bld")} />
-            )}
+              onCloseGuide={() => { if (page === "bld-guide") navigate("bld"); }} />
           </Suspense>
         ) : page === "video" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>

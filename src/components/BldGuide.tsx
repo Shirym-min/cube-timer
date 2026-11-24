@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { Alg } from "cubing/alg";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { speffzSticker, type Orbit } from "../lib/bld";
@@ -6,6 +6,8 @@ import {
   m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, opEdgeSetups, opParity, tPerm, yPerm,
 } from "../lib/bldMethods";
 import { BldHighlightCube, type Highlight } from "./BldHighlightCube";
+import { BldCubeNet } from "./BldCubeNet";
+import { BldCommutator } from "./BldCommutator";
 import { Modal } from "./Modal";
 import "./AlgorithmLibrary.css";
 import "./BldTrainer.css";
@@ -19,10 +21,12 @@ type GuideCase = {
   setup?: string;
   evenAlg?: string;
   explanation?: string;
+  orbit?: Orbit;
+  letter?: string;
 };
 type Group = { title: string; cases: GuideCase[] };
 
-const compactQuery = "(max-width: 760px)";
+const compactQuery = "(max-width: 760px), (pointer: coarse) and (max-height: 540px)";
 function subscribeViewport(listener: () => void) {
   const media = matchMedia(compactQuery);
   media.addEventListener("change", listener);
@@ -36,6 +40,7 @@ function setups(orbit: Orbit, buffer: string, base: string, entries: Record<stri
   return Object.entries(entries).map(([letter, setup]): GuideCase => ({
     title: `${letter} · ${speffzSticker(orbit, letter).position}`,
     highlights: marks(orbit, buffer + letter),
+    orbit, letter,
     setup,
     alg: base,
   }));
@@ -49,6 +54,7 @@ const groups: Record<Method, Group[]> = {
       cases: Object.entries(m2Special).map(([letter, alg]) => ({
         title: `${letter} · ${speffzSticker("EDGES", letter).position}`,
         highlights: marks("EDGES", "U" + letter),
+        orbit: "EDGES", letter,
         alg,
         evenAlg: m2Special[m2Even[letter]],
         explanation: "交換文字列の先頭から数えて、奇数番目と偶数番目で手順を切り替えます。サイクルが変わっても番号は続けます。",
@@ -77,77 +83,106 @@ const groups: Record<Method, Group[]> = {
   ],
 };
 
-export function BldGuide({ backURL, onBack }: {
-  backURL: string;
-  onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
-}) {
+export function BldGuide({ onClose }: { onClose: () => void }) {
   const [method, setMethod] = useState<Method>("M2 法");
   const [selected, setSelected] = useState<GuideCase>();
-  const [showModal, setShowModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [view, setView] = useState<"list" | "net">("list");
+  const [orbit, setOrbit] = useState<Orbit>("EDGES");
   const compact = useSyncExternalStore(subscribeViewport, compactViewport);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  const netCases = groups[method].flatMap((group) => group.cases).filter((item) => item.orbit === orbit);
 
-  function closeModal() {
-    setShowModal(false);
-    trigger.current?.focus({ preventScroll: true });
+  function choose(item: GuideCase, button?: HTMLButtonElement) {
+    trigger.current = button ?? (document.activeElement instanceof HTMLButtonElement ? document.activeElement : null);
+    setSelected(item);
+    setShowDetail(compact);
+    if (compact) requestAnimationFrame(() => back.current?.focus());
+  }
+
+  function returnToList() {
+    setShowDetail(false);
+    requestAnimationFrame(() => trigger.current?.focus());
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="page-content algorithm-library bld-guide-page">
-      <header className="algorithm-library-heading">
-        <a href={backURL} onClick={onBack} aria-label="BLD トレーナー"><ArrowLeft size={16} aria-hidden="true" /><span>BLD トレーナー</span></a>
-        <h1>BLD ガイド</h1>
-      </header>
-      <div className="algorithm-filters">
-        <label>解法
-          <select value={method} onChange={(event) => {
-            setMethod(event.target.value as Method);
-            setSelected(undefined);
-            setShowModal(false);
-          }}>
-            {methods.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
-      </div>
-      <div className="algorithm-browser">
-        <section className="algorithm-cases" aria-label="手順一覧">
-          <div className="algorithm-list-heading"><h2>手順</h2></div>
-          {compact && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
-          <div className="algorithm-case-scroll">
-            {groups[method].map((group) => (
-              <section className="bld-guide-group" key={group.title} aria-label={group.title}>
-                <h3>{group.title}</h3>
-                <ul className="algorithm-case-list">
-                  {group.cases.map((item) => (
-                    <li key={item.title}>
-                      <button type="button" aria-current={selected === item ? "true" : undefined}
-                        aria-haspopup={compact ? "dialog" : undefined} onClick={(event) => {
-                          trigger.current = event.currentTarget;
-                          setSelected(item);
-                          setShowModal(compact);
-                        }}>
-                        {item.title}<ChevronRight size={15} aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+    <Modal title="BLD ガイド" onClose={onClose} wide className="bld-guide-modal bld-card-modal">
+      <div className="bld-guide-layout">
+        <div hidden={compact && showDetail}>
+          <div className="bld-guide-toolbar">
+            <label>解法
+              <select value={method} onChange={(event) => {
+                setMethod(event.target.value as Method);
+                setSelected(undefined);
+                setOrbit("EDGES");
+              }}>
+                {methods.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            {method !== "3-style" && <div className="segmented" role="group" aria-label="手順の探し方">
+              <button type="button" aria-pressed={view === "list"} className={view === "list" ? "selected" : ""} onClick={() => setView("list")}>一覧</button>
+              <button type="button" aria-pressed={view === "net"} className={view === "net" ? "selected" : ""} onClick={() => setView("net")}>展開図</button>
+            </div>}
           </div>
-        </section>
-        {!compact && (
-          <section className="algorithm-detail">
-            {selected ? <CaseDetail key={selected.title} item={selected} showTitle /> : <Overview method={method} />}
-            {selected && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
-          </section>
+          <div className="algorithm-browser">
+            <section className="algorithm-cases" aria-label="手順一覧">
+              {compact && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
+              {view === "net" && method !== "3-style" ? (
+                <div className="bld-section bld-guide-map">
+                  {method === "Old Pochmann 法" && <div className="segmented" role="group" aria-label="ピースの種類">
+                    <button type="button" aria-pressed={orbit === "EDGES"} className={orbit === "EDGES" ? "selected" : ""} onClick={() => setOrbit("EDGES")}>エッジ</button>
+                    <button type="button" aria-pressed={orbit === "CORNERS"} className={orbit === "CORNERS" ? "selected" : ""} onClick={() => setOrbit("CORNERS")}>コーナー</button>
+                  </div>}
+                  <BldCubeNet orbit={orbit} selection={selected?.orbit === orbit && selected.letter ? [selected.letter] : []}
+                    disabled={(letter) => !netCases.some((item) => item.letter === letter)}
+                    onSelect={(letter) => {
+                      const item = netCases.find((entry) => entry.letter === letter);
+                      if (item) choose(item);
+                    }} />
+                  <button type="button" onClick={(event) => choose(groups[method].at(-1)!.cases[0], event.currentTarget)}>パリティ処理</button>
+                </div>
+              ) : (
+                <div className="algorithm-case-scroll">
+                  {groups[method].map((group) => (
+                    <section className="bld-guide-group" key={group.title} aria-label={group.title}>
+                      <h3>{group.title}</h3>
+                      <ul className="algorithm-case-list">
+                        {group.cases.map((item) => (
+                          <li key={item.title}>
+                            <button type="button" aria-current={selected === item ? "true" : undefined}
+                              onClick={(event) => choose(item, event.currentTarget)}>
+                              {item.title}<ChevronRight size={15} aria-hidden="true" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </section>
+            {!compact && (
+              <section className="algorithm-detail">
+                {selected ? <CaseDetail key={selected.title} item={selected} showTitle /> : <Overview method={method} />}
+                {selected && <details className="bld-guide-overview"><summary>解法の進め方</summary><Overview method={method} /></details>}
+              </section>
+            )}
+          </div>
+          {method === "3-style" && <details className="bld-guide-overview">
+            <summary>コミュテーターを生成</summary><BldCommutator />
+          </details>}
+        </div>
+        {compact && showDetail && selected && (
+          <div className="bld-section">
+            <button ref={back} type="button" className="text-button bld-back" onClick={returnToList}>
+              <ArrowLeft size={16} aria-hidden="true" /> 手順の選択に戻る
+            </button>
+            <CaseDetail key={selected.title} item={selected} showTitle />
+          </div>
         )}
       </div>
-      {compact && showModal && selected && (
-        <Modal title={selected.title} onClose={closeModal} className="algorithm-modal">
-          <CaseDetail key={selected.title} item={selected} />
-        </Modal>
-      )}
-    </main>
+    </Modal>
   );
 }
 

@@ -1,11 +1,8 @@
 :root {
   font-family:
-    "Space Grotesk",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Hiragino Kaku Gothic ProN",
-    "Yu Gothic",
-    sans-serif;
+    system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  touch-action: pan-x pan-y;
   color: #202b40;
   background: #f5f7fb;
   font-synthesis: none;
@@ -66,6 +63,7 @@ textarea {
 html {
   -webkit-tap-highlight-color: transparent;
 }
+code, pre, kbd, samp { font-family: var(--mono); }
 button {
   display: inline-flex;
   align-items: center;
@@ -440,7 +438,7 @@ kbd {
 .records-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -581,7 +579,7 @@ kbd {
   min-height: 44px;
 }
 .scramble-text {
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   font-size: 18px;
   line-height: 1.45;
   text-align: center;
@@ -651,7 +649,7 @@ kbd {
 .timer-digits {
   font-size: clamp(74px, 8.6vw, 142px);
   font-weight: 500;
-  letter-spacing: -0.075em;
+  letter-spacing: -0.045em;
   line-height: 1.25;
   font-variant-numeric: tabular-nums;
   display: flex;
@@ -659,7 +657,7 @@ kbd {
 }
 .timer-digits .decimals {
   font-size: 0.64em;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.035em;
 }
 .timer-digits .decimal-dot {
   font-size: 0.75em;
@@ -714,7 +712,7 @@ kbd {
   color: var(--muted);
 }
 .quick-stats strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   font-size: 16px;
   font-weight: 400;
   white-space: nowrap;
@@ -921,7 +919,7 @@ kbd {
 }
 .statistics-table td {
   text-align: right;
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
 }
 .statistics-table thead th:not(:first-child) {
   text-align: right;
@@ -952,7 +950,7 @@ kbd {
   min-width: 85px;
 }
 .full-records > button > strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   min-width: 100px;
   text-align: left;
 }
@@ -1246,8 +1244,7 @@ dialog::backdrop {
 }
 .hint-result strong {
   font:
-    16px/1.8 "DM Mono",
-    monospace;
+    16px/1.8 var(--mono);
   word-spacing: 3px;
 }
 .hint-preview {
@@ -1259,8 +1256,7 @@ dialog::backdrop {
 }
 .scramble-detail {
   font:
-    12px/1.9 "DM Mono",
-    monospace;
+    12px/1.9 var(--mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   padding: 14px;
@@ -2075,7 +2071,7 @@ dialog::backdrop {
   color: var(--text);
 }
 .recall-answer span {
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   line-height: 1.6;
 }
 .recall-actions {
@@ -2583,12 +2579,12 @@ dialog[open][data-closing]::backdrop {
 .timer-stop-surface {
   display: none;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none), (pointer: coarse) {
   .timer-start-surface {
     display: block;
     position: absolute;
     inset: 0;
-    touch-action: pan-y pinch-zoom;
+    touch-action: none;
     cursor: pointer;
   }
 }
@@ -2773,7 +2769,7 @@ dialog[open][data-closing]::backdrop {
 }
 .distribution-metrics dd {
   margin: 3px 0 0;
-  font: 16px "DM Mono", monospace;
+  font: 16px var(--mono);
 }
 .distribution-axis-title {
   font-size: 11px;
@@ -2784,7 +2780,7 @@ dialog[open][data-closing]::backdrop {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 6px 8px;
   color: var(--muted);
-  font: 11px "DM Mono", monospace;
+  font: 11px var(--mono);
 }
 .distribution-chart svg {
   display: block;
@@ -2900,4 +2896,53 @@ dialog[open][data-closing]::backdrop {
   .mobile-timer .timer-tools .icon-button {
     display: none;
   }
+}
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .app,
+  .app:has(.mobile-timer) {
+    display: grid;
+    grid-template-columns: calc(58px + env(safe-area-inset-left)) minmax(0, 1fr);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) 0;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .app .rail {
+    position: sticky;
+    inset: 0 auto auto;
+    width: auto;
+    height: 100dvh;
+    padding: 6px 4px env(safe-area-inset-bottom) calc(4px + env(safe-area-inset-left));
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    border-top: 0;
+    border-right: 1px solid var(--line);
+  }
+  .app .rail .brand, .app .rail-caption, .app .rail nav a span,
+  .app .rail-bottom > button span, .app .rail nav kbd { display: none; }
+  .app .rail nav { display: grid; width: 100%; gap: 3px; }
+  .app .rail nav a, .app .rail-bottom > button {
+    min-width: 0;
+    min-height: 40px;
+    height: 40px;
+    width: 100%;
+    padding: 4px;
+    justify-content: center;
+  }
+  .app .rail-bottom { margin-top: auto; }
+  .app .topbar { height: 40px; padding: 0 12px; }
+  .app:has(.mobile-timer) .app-main { height: auto; }
+  .timer-layout .timer-workspace { min-width: 0; padding: 8px 12px; }
+  .mobile-timer .timer-workspace { grid-template-rows: auto minmax(118px, 1fr) auto; }
+  .timer-layout .timer-stage { min-height: 132px; padding-block: 8px; }
+  .timer-layout .timer-stage:has(.last-solve-tray) { padding-bottom: 32px; }
+  .timer-layout .timer-tools { display: flex; }
+  .timer-layout .timer-touch { min-height: 76px; }
+  .timer-layout .timer-digits:not(.text-value) { font-size: clamp(58px, 22vh, 104px); }
+  .timer-layout .trend-panel, .app .app-footer { display: none; }
+  .timer-layout .records-pane { min-width: 0; }
+  .timer-layout .session-toolbar { height: auto; min-height: 44px; }
+  .page-content { padding: 12px; }
 }

@@ -155,7 +155,7 @@ button.video-guide-target:active:not(:disabled) {
   width: 19px;
   height: 19px;
   border-radius: 50%;
-  font: 11px "DM Mono", monospace;
+  font: 11px var(--mono);
 }
 .video-guide-point {
   background: white;
@@ -195,7 +195,7 @@ button.video-guide-target:active:not(:disabled) {
   paint-order: stroke;
   text-anchor: middle;
   dominant-baseline: central;
-  font: 12px "DM Mono", monospace;
+  font: 12px var(--mono);
 }
 .video-calibration p {
   margin: 0 0 5px;
@@ -241,7 +241,7 @@ button.video-guide-target:active:not(:disabled) {
 }
 .video-time,
 .video-panel textarea {
-  font-family: "DM Mono", monospace;
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
 .video-analysis input[type="range"] {

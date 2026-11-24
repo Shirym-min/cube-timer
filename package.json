@@ -10,8 +10,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fontsource/dm-mono": "latest",
-    "@fontsource/space-grotesk": "latest",
     "@supabase/supabase-js": "latest",
     "cubing": "latest",
     "lucide-react": "latest",

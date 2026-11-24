@@ -1,10 +1,5 @@
 import { createRoot } from "react-dom/client";
 import { Component, type ReactNode } from "react";
-import "@fontsource/space-grotesk/latin-400.css";
-import "@fontsource/space-grotesk/latin-500.css";
-import "@fontsource/space-grotesk/latin-600.css";
-import "@fontsource/space-grotesk/latin-700.css";
-import "@fontsource/dm-mono/latin-400.css";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./styles.css";
@@ -35,6 +30,22 @@ document.addEventListener("pointerdown", () => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Tab") document.documentElement.removeAttribute("data-pointer-focus");
 }, true);
+
+// Keep browser zoom gestures from competing with the timer and cube controls.
+window.addEventListener("wheel", (event) => {
+  if (event.ctrlKey || event.metaKey) event.preventDefault();
+}, { passive: false });
+window.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) &&
+    (["+", "=", "-", "0", "−"].includes(event.key) ||
+      ["NumpadAdd", "NumpadSubtract"].includes(event.code))) event.preventDefault();
+}, { capture: true });
+window.addEventListener("touchmove", (event) => {
+  if (event.touches.length > 1 && event.cancelable) event.preventDefault();
+}, { passive: false });
+for (const type of ["gesturestart", "gesturechange"]) {
+  window.addEventListener(type, (event) => event.preventDefault(), { passive: false });
+}
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

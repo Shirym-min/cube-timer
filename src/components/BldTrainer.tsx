@@ -1,11 +1,15 @@
 import { useState, type MouseEvent } from "react";
 import { ArrowLeft, BookOpen, Copy, Settings2 } from "lucide-react";
 import {
-  BUFFERS, FACES, ORBITS, ORBIT_LABELS, bufferLetter, generateBld,
-  generateRandomBld, loadBldScramble, traceMemoSteps, verifyMemo, type BldOptions, type MemoStep, type Orbit,
+  BUFFERS, ORBITS, ORBIT_LABELS, bufferLetter, generateBld,
+  generateRandomBld, loadBldScramble, memoFrames, normalizeMemo, traceMemoSteps, verifyMemo, type BldOptions, type MemoStep, type Orbit,
 } from "../lib/bld";
 import { formatTime } from "../lib/model";
 import { BldReview } from "./BldReview";
+import { BldSwapPreview } from "./BldSwapPreview";
+import { BldGuide } from "./BldGuide";
+import { BldCommutator } from "./BldCommutator";
+import { BldCubeNet } from "./BldCubeNet";
 import { Diagram } from "./Diagram";
 import { Modal } from "./Modal";
 import "./BldTrainer.css";
@@ -15,27 +19,21 @@ const defaultOptions: BldOptions = {
   CORNERS: { min: 3, max: 6, buffer: "UBL", breaks: "any" },
 };
 const limits = { EDGES: 16, CORNERS: 10 };
-const faceColors = { U: "#f4f4f5", L: "#ff9b52", F: "#77d6a3", R: "#ff8585", B: "#89baff", D: "#ffdd70" };
-const stickerOrder = {
-  EDGES: [-1, 0, -1, 3, -1, 1, -1, 2, -1],
-  CORNERS: [0, -1, 1, -1, -1, -1, 3, -1, 2],
-};
 const emptyMemo = { EDGES: "", CORNERS: "" };
 const groupMemo = (memo: string) => memo.match(/.{1,2}/g)?.join(" ") ?? "交換なし";
 type Exercise = Awaited<ReturnType<typeof generateBld>> & { steps: Record<Orbit, MemoStep[]> };
 type Recall = { phase: "memo"; started: number } | { phase: "recall"; elapsed: number };
 
-export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
-  active: boolean;
-  guideURL: string;
-  onGuide: (event: MouseEvent<HTMLAnchorElement>) => void;
+export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
+  openGuide: boolean;
   backURL: string;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onCloseGuide: () => void;
 }) {
   const [mode, setMode] = useState<"random" | "conditions">("random");
   const [options, setOptions] = useState(defaultOptions);
   const [exercise, setExercise] = useState<Exercise>();
-  const [popup, setPopup] = useState<"settings" | "letters" | "scramble" | "review">();
+  const [popup, setPopup] = useState<"settings" | "letters" | "scramble" | "review" | "guide" | "commutator" | "preview">();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -44,6 +42,7 @@ export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
   const [showNet, setShowNet] = useState(() => matchMedia("(min-width: 1000px)").matches);
   const [feedback, setFeedback] = useState("");
   const [recall, setRecall] = useState<Recall>();
+  const [previewSource, setPreviewSource] = useState<"answer" | "input">("answer");
   const [scrambleInput, setScrambleInput] = useState("");
   const [scrambleInputError, setScrambleInputError] = useState("");
   const hidden = recall?.phase === "recall";
@@ -118,20 +117,24 @@ export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
   }
 
   function closePopup() {
+    if (openGuide) onCloseGuide();
     setPopup(undefined);
   }
 
   return (
-    <main id={active ? "main-content" : undefined} hidden={!active} tabIndex={-1} className="page-content bld-page">
+    <main id="main-content" tabIndex={-1} className="page-content bld-page">
       <div className="bld-workspace">
         <a className="action-link text-button bld-back" href={backURL} onClick={onBack}>
           <ArrowLeft size={16} aria-hidden="true" /> 練習
         </a>
         <header className="page-heading">
           <h1>BLD トレーナー</h1>
-          <a className="action-link" href={guideURL} onClick={onGuide}>
-            <BookOpen size={16} aria-hidden="true" /> ガイド
-          </a>
+          <div className="bld-actions">
+            <button type="button" className="text-button" onClick={() => setPopup("commutator")}>3-style</button>
+            <button type="button" className="text-button" onClick={() => setPopup("guide")}>
+              <BookOpen size={16} aria-hidden="true" /> ガイド
+            </button>
+          </div>
         </header>
         <div className="bld-card">
           <div className="bld-section bld-solve">
@@ -220,6 +223,11 @@ export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
                 </button>
                 <button type="button" className="text-button" disabled={!exercise || busy || !!recall}
                   onClick={() => setPopup("review")}>交換を振り返る</button>
+                <button type="button" className="text-button" disabled={!exercise || busy || !!recall}
+                  onClick={() => {
+                    setPreviewSource("answer");
+                    setPopup("preview");
+                  }}>交換を再生</button>
               </div>
             </form>
             <p role="status">{feedback}</p>
@@ -242,6 +250,15 @@ export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
           </section>
         </div>
       </div>
+      {(openGuide || popup === "guide") && <BldGuide onClose={closePopup} />}
+      {popup === "commutator" && <Modal title="3-style のコミュテーター" onClose={closePopup}
+        className="bld-card-modal" wide><BldCommutator /></Modal>}
+      {popup === "preview" && exercise && (
+        <Modal title="交換プレビュー" onClose={closePopup} className="bld-card-modal">
+          <PreviewContent key={previewSource} exercise={exercise} inputs={inputs}
+            source={previewSource} onSource={setPreviewSource} />
+        </Modal>
+      )}
       {popup === "settings" && (
         <Modal title="スクランブル設定" onClose={closePopup}>
           <BldSettings options={options} conditions={mode === "conditions"} onApply={(next) => {
@@ -276,6 +293,30 @@ export function BldTrainer({ active, backURL, onBack, guideURL, onGuide }: {
       )}
     </main>
   );
+}
+
+function PreviewContent({ exercise, inputs, source, onSource }: {
+  exercise: Exercise;
+  inputs: typeof emptyMemo;
+  source: "answer" | "input";
+  onSource: (source: "answer" | "input") => void;
+}) {
+  function sequence(orbit: Orbit) {
+    return source === "answer" ? exercise.steps[orbit].map(({ letter }) => letter)
+      : [...normalizeMemo(inputs[orbit])];
+  }
+  const sequences = { EDGES: sequence("EDGES"), CORNERS: sequence("CORNERS") };
+  let frames;
+  try {
+    frames = memoFrames(exercise.pattern, exercise.options, sequences);
+  } catch (error) {
+    return <div className="bld-section">
+      <p role="alert">{error instanceof Error ? error.message : "交換文字列を読み込めませんでした。"}</p>
+      <button type="button" onClick={() => onSource("answer")}>生成した答えを表示</button>
+    </div>;
+  }
+  const moves = ORBITS.flatMap((orbit) => sequences[orbit].map((letter) => ({ orbit, letter })));
+  return <BldSwapPreview frames={frames} moves={moves} source={source} onSource={onSource} />;
 }
 
 function BldSettings({ options, conditions, onApply }: {
@@ -349,17 +390,7 @@ function BldLetters({ options }: { options: BldOptions }) {
           </button>
         ))}
       </div>
-      <div className="bld-net" translate="no">
-        {FACES.map((face, index) => (
-          <div key={face} className={`bld-face bld-face-${face}`} role="group" aria-label={`${face} 面`}>
-            {stickerOrder[orbit].map((offset, cell) => {
-              const letter = offset < 0 ? "" : String.fromCharCode(65 + index * 4 + offset);
-              return <span key={cell} style={{ backgroundColor: faceColors[face] }}
-                className={letter === currentBuffer ? "bld-buffer" : undefined}>{cell === 4 ? face : letter}</span>;
-            })}
-          </div>
-        ))}
-      </div>
+      <BldCubeNet orbit={orbit} selection={[currentBuffer]} />
       <p className="muted">Speffz（バッファ {currentBuffer}）</p>
     </div>
   );

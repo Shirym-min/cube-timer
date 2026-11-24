@@ -146,10 +146,12 @@ export function traceMemo(pattern: KPattern, orbit: Orbit, name: string) {
   return traceMemoSteps(pattern, orbit, name).map(({ letter }) => letter).join("");
 }
 
+export const normalizeMemo = (input: string) => input.normalize("NFKC").toUpperCase().replace(/\s/g, "");
+
 export function verifyMemo(pattern: KPattern, orbit: Orbit, name: string, input: string) {
   const buffer = pieceOrder[orbit].indexOf(name);
   const state = clone(pattern.patternData[orbit]);
-  for (const letter of input.normalize("NFKC").toUpperCase().replace(/\s/g, "")) {
+  for (const letter of normalizeMemo(input)) {
     const target = letters[orbit].find((entry) => entry.letter === letter);
     if (!target || target.piece === buffer)
       throw Error(`${ORBIT_LABELS[orbit]}の「${letter}」は交換先に指定できません。`);
@@ -187,4 +189,96 @@ export async function loadBldScramble(input: string, options: BldOptions) {
     throw Error("U、R、F、D、L、B の面回転でスクランブルを入力してください。");
   const puzzle = await cube3x3x3.kpuzzle();
   return { scramble, pattern: puzzle.defaultPattern().applyAlg(scramble), options };
+}
+
+export const cubeNetCells = {
+  EDGES: [-1, 0, -1, 3, -1, 1, -1, 2, -1],
+  CORNERS: [0, -1, 1, -1, -1, -1, 3, -1, 2],
+};
+
+export type CubeFace = (typeof FACES)[number];
+export type MemoFrame = {
+  colors: Record<Orbit, Record<string, CubeFace>>;
+  transfers: { from: string; to: string }[];
+};
+
+export function memoFrames(pattern: KPattern, options: BldOptions, sequences: Record<Orbit, string[]>) {
+  const state = { EDGES: clone(pattern.patternData.EDGES), CORNERS: clone(pattern.patternData.CORNERS) };
+  function colors(orbit: Orbit): Record<string, CubeFace> {
+    const size = orientationCount(orbit);
+    return Object.fromEntries(letters[orbit].map(({ letter, piece, sticker }) => {
+      const source = state[orbit];
+      const face = pieceOrder[orbit][source.pieces[piece]][mod(sticker + source.orientation[piece], size)];
+      return [letter, face as CubeFace];
+    }));
+  }
+  const frame = (transfers: MemoFrame["transfers"]): MemoFrame => ({
+    colors: { EDGES: colors("EDGES"), CORNERS: colors("CORNERS") },
+    transfers,
+  });
+  const frames = [frame([])];
+  for (const orbit of ORBITS) {
+    const buffer = pieceOrder[orbit].indexOf(options[orbit].buffer);
+    const size = orientationCount(orbit);
+    const bufferStickers = letters[orbit].filter(({ piece }) => piece === buffer);
+    for (const letter of sequences[orbit]) {
+      const target = letters[orbit].find((entry) => entry.letter === letter);
+      if (!target || target.piece === buffer)
+        throw Error(`${ORBIT_LABELS[orbit]}の「${letter}」は交換先に指定できません。`);
+      const transfers = bufferStickers.flatMap((bufferSticker) => {
+        const targetSticker = letters[orbit].find(({ piece, sticker }) => piece === target.piece &&
+          sticker === mod(bufferSticker.sticker + target.sticker, size))!;
+        const from = `${orbit}-${bufferSticker.letter}`;
+        const to = `${orbit}-${targetSticker.letter}`;
+        return [{ from, to }, { from: to, to: from }];
+      });
+      swap(state[orbit], buffer, target, size);
+      frames.push(frame(transfers));
+    }
+  }
+  return frames;
+}
+
+const commutators = { EDGES: "[M', U2]", CORNERS: "[R' D' R, U]" };
+const setupMoves = ["U", "L", "F", "R", "B", "D"].flatMap((face) => [face, face + "'", face + "2"]);
+
+export async function generateCommutator(orbit: Orbit, selected: string[]) {
+  const targets = selected.map((letter) => letters[orbit].find((item) => item.letter === letter));
+  if (targets.length !== 3 || targets.some((target) => !target) ||
+      new Set(targets.map((target) => target?.piece)).size !== 3)
+    throw Error("異なる3つのピースを選んでください。");
+
+  const puzzle = await cube3x3x3.kpuzzle();
+  const size = orientationCount(orbit);
+  function stickerMap(alg: string) {
+    const { permutation, orientationDelta } = puzzle.algToTransformation(alg).transformationData[orbit];
+    const positions = new Map(permutation.map((src, dest) => [src, dest]));
+    return letters[orbit].map(({ piece, sticker }) => {
+      const dest = positions.get(piece)!;
+      return letters[orbit].findIndex((entry) => entry.piece === dest &&
+        entry.sticker === mod(sticker - orientationDelta[dest], size));
+    });
+  }
+  const base = commutators[orbit];
+  const cycle = stickerMap(base);
+  const moves = setupMoves.map(stickerMap);
+  const start = selected.map((letter) => letter.charCodeAt(0) - 65);
+  const queue = [{ positions: start, setup: [] as string[] }];
+  const seen = new Set([start.join(",")]);
+
+  // Find a setup that sends the three selected stickers into the base cycle.
+  for (let i = 0; i < queue.length; i++) {
+    const { positions, setup } = queue[i];
+    if (positions.every((sticker, index) => cycle[sticker] === positions[(index + 1) % 3])) {
+      return { setup: setup.join(" "), base, alg: setup.length ? `[${setup.join(" ")}: ${base}]` : base };
+    }
+    moves.forEach((move, index) => {
+      const next = positions.map((position) => move[position]);
+      const key = next.join(",");
+      if (seen.has(key)) return;
+      seen.add(key);
+      queue.push({ positions: next, setup: [...setup, setupMoves[index]] });
+    });
+  }
+  throw Error("選んだステッカーの手順を作成できませんでした。");
 }
