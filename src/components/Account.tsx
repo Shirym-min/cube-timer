@@ -1,21 +1,17 @@
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { cloud } from "../lib/cloud";
-import { Cloud, LogOut, RefreshCw } from "lucide-react";
+import { auth } from "../lib/auth";
+import { LogOut } from "lucide-react";
 export function Account({
   user,
   recovery,
   doneRecovery,
-  importGuest,
-  sync,
-  status,
+  ready,
 }: {
   user: User | null;
   recovery: boolean;
   doneRecovery: () => void;
-  importGuest: () => Promise<void>;
-  sync: () => Promise<void>;
-  status: string;
+  ready: boolean;
 }) {
   const [mode, setMode] = useState<"login" | "signup" | "reset">("login"),
     [email, setEmail] = useState(""),
@@ -33,47 +29,17 @@ export function Account({
       setBusy(false);
     }
   }
-  if (!cloud)
-    return (
-      <div className="account-empty">
-        <Cloud size={36} />
-        <h3>同期先がまだ設定されていません</h3>
-        <p>
-          現在の記録はこの端末に保存されます。Supabaseを接続すると、メールアドレスで登録して端末間で同期できます。
-        </p>
-        <p className="muted">
-          管理者はREADMEの手順でDBを作成し、環境変数を設定してください。記録は設定画面からバックアップできます。
-        </p>
-      </div>
-    );
+  const client = auth;
+  if (!client) return <p>メールでのログインは設定されていません。</p>;
+  if (!ready) return <p role="status">ログイン状態を確認しています…</p>;
   if (user && !recovery)
     return (
       <div className="stack">
         <p className="account-email">{user.email}</p>
-        <p>{status}</p>
-        <button onClick={() => void task(sync)} disabled={busy}>
-          <RefreshCw size={16} />
-          今すぐ同期
-        </button>
         <button
           onClick={() =>
             void task(async () => {
-              await importGuest();
-              await sync();
-              setMessage("この端末のゲスト記録を取り込みました。");
-            })
-          }
-          disabled={busy}
-        >
-          ゲストの記録を取り込む
-        </button>
-        <p className="muted">
-          ログイン前の記録は、自動ではアカウントに追加されません。
-        </p>
-        <button
-          onClick={() =>
-            void task(async () => {
-              const { error } = await cloud!.auth.signOut();
+              const { error } = await client.signOut();
               if (error) throw error;
             })
           }
@@ -92,14 +58,14 @@ export function Account({
         e.preventDefault();
         void task(async () => {
           if (recovery) {
-            const { error } = await cloud!.auth.updateUser({ password });
+            const { error } = await client.updateUser({ password });
             if (error) throw error;
             doneRecovery();
             setMessage("パスワードを変更しました。");
             return;
           }
           if (mode === "reset") {
-            const { error } = await cloud!.auth.resetPasswordForEmail(email, {
+            const { error } = await client.resetPasswordForEmail(email, {
               redirectTo: location.origin + import.meta.env.BASE_URL,
             });
             if (error) throw error;
@@ -108,14 +74,14 @@ export function Account({
           }
           const { error } =
             mode === "signup"
-              ? await cloud!.auth.signUp({
+              ? await client.signUp({
                   email,
                   password,
                   options: {
                     emailRedirectTo: location.origin + import.meta.env.BASE_URL,
                   },
                 })
-              : await cloud!.auth.signInWithPassword({ email, password });
+              : await client.signInWithPassword({ email, password });
           if (error) throw error;
           if (mode === "signup")
             setMessage("確認メールのリンクを開いて登録を完了してください。");

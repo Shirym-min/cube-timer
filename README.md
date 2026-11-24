@@ -1,6 +1,6 @@
 # SPLIT — Cube Timer
 
-PCとモバイルで使える、ローカル保存・アカウント同期対応のキューブタイマーです。React、TypeScript、Vite、cubing.js、Supabaseで実装しています。
+PCとモバイルで使える、ローカル保存・アカウント同期対応のキューブタイマーです。React、TypeScript、Vite、cubing.js、Supabase Auth、Google Drive APIで実装しています。
 VIBECODED
 
 ## 起動
@@ -20,35 +20,37 @@ npm run build
 npm run preview
 ```
 
+## メールでのログインを有効にする
+
+既存の Supabase プロジェクトの URL と公開キーを、`.env.local` の `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY` に設定します。Supabase Authentication で Email を有効にし、Site URL と Redirect URLs に利用する URL を登録します。メール登録、ログイン、パスワード再設定には Supabase Auth を使います。計測履歴は端末に保存され、Drive を接続した場合は手動で同期できます。
+
 ## 同期を有効にする
 
-1. [Supabase](https://supabase.com/)でFreeプランのプロジェクトを作成します。
-2. SQL Editorで `supabase/schema.sql` を実行します。RLSによって本人の行だけを読み書きできます。公開キーでは他のアカウントの記録を取得できません。
-3. `.env.example` を `.env.local` にコピーし、Project URLとanonキーまたはpublishableキーを設定します。service_roleやsecretキーはフロントエンドに設定しないでください。
-4. AuthenticationのURL Configurationで公開サイトのURLをSite URLとRedirect URLsに登録します。ローカル確認には `http://localhost:5173/` と実際に使用するURLも追加します。
-5. Email認証とメール確認を有効にします。一般公開時は独自SMTPの設定を行い、送信制限を確認してください。Supabaseの標準メール送信は開発・テスト向けです。
-6. 開発サーバーを再起動、または環境変数を設定した状態で再ビルドします。
-7. アプリの「ログイン」から登録し、確認メールのリンクを開きます。同じアカウントで別の端末からログインすると同期されます。
+1. Google Cloud のプロジェクトで [Google Drive API](https://developers.google.com/workspace/drive/api/quickstart/js) を有効にします。
+2. Google Auth Platform で同意画面を設定し、テスト中は利用する Google アカウントをテストユーザーに追加します。
+3. ウェブアプリケーション用の OAuth クライアント ID を作成し、「承認済みの JavaScript 生成元」に実際のオリジンを登録します。開発時は `http://localhost:5173`、公開時は `https://example.com` のように、パスを含めずに指定します。
+4. `.env.example` を `.env.local` にコピーし、`VITE_GOOGLE_CLIENT_ID` にクライアント ID を設定します。開発サーバーを再起動するか、設定した状態でビルドします。
+5. 「アカウントと同期」で Google Drive を開き、Google でログインしてから「同期」または「今すぐ同期」を押します。別の端末でも同じ Google アカウントでログインし、同期します。
 
-ログイン前の記録は自動でアップロードしません。「アカウントと同期」の「ゲストの記録を取り込む」で追加できます。アカウントごとに端末内の保存領域を分けています。ログアウトしても端末内の記録は消去しません。
+同期すると、記録の追加・編集・削除を Google Drive の[アプリ専用領域](https://developers.google.com/workspace/drive/api/guides/appdata)に保存し、他の端末で保存した変更を取り込みます。別々の記録は両方残ります。同じ記録を複数端末で編集した場合は、論理時刻と操作IDで採用する変更を決めます。すべての操作は履歴に残り、端末ごとに異なる結果にはなりません。
 
-記録の変更は不変の操作として保存します。同じ記録への同時編集では、論理時刻が後の変更を採用し、同時刻では操作IDで決定します。オフライン中の別記録の追加は両方残ります。同じ記録への競合編集は自動統合せず、採用されなかった操作もバックアップ内に保持します。削除も操作として残ります。クラウドから履歴まで完全に削除するにはSupabase Authからアカウントを削除します。
+ゲストの記録は「ゲストの記録を取り込む」で追加できます。アプリのアカウントと Google Drive は個別に接続できます。Drive を接続している間は Google アカウントの履歴が表示され、接続を解除するとアプリのアカウントまたはゲストの履歴に戻ります。ページを開き直したときや Google の認証期限が切れたときは、次回の同期で Google の認証画面が開くことがあります。
 
-無料プランにはDB 500MB、月間アクティブユーザー50,000人、転送量5GBなどの制限があります。1週間利用がないプロジェクトは休止されます。条件は[料金表](https://supabase.com/pricing)で確認してください。現実装は同期時に本人の操作履歴を全件照合するため、利用量の増加に伴って転送量を確認してください。
+端末にあるアカウントの記録を Drive に移すには、Drive の接続を解除した状態でアプリにログインし、設定画面で JSON バックアップを保存します。旧版で Supabase にだけ残っている記録は、旧版で同期してから JSON に保存してください。Drive を接続して JSON を取り込んだあと、同期すると Drive に保存できます。
 
 ## 公開
 
-Vercel、Cloudflare Pages、GitHub Pagesで静的サイトとして公開できます。DB接続情報はビルド時に埋め込む公開用の値です。
+Vercel、Cloudflare Pages、GitHub Pagesで静的サイトとして公開できます。Google のクライアント ID はビルド時に設定します。
 
 ### Vercel / Cloudflare Pages
 
 - Build command: `npm run build`
 - Output directory: `dist`
 - Node.js: 22.3以上
-- 環境変数: `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
+- 環境変数: `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`、`VITE_GOOGLE_CLIENT_ID`
 - `VITE_BASE_PATH`: `/`
 
-リポジトリを接続してデプロイします。認証メールのURLを公開先に合わせて設定してください。独自ドメインにも対応できます。公開の実行や外部プロジェクトの作成はこのリポジトリには含みません。
+リポジトリを接続してデプロイします。公開先のオリジンを Google の OAuth クライアントに登録してください。独自ドメインにも対応できます。公開の実行や外部プロジェクトの作成はこのリポジトリには含みません。
 
 ### GitHub Pages
 
@@ -60,7 +62,7 @@ Vercel、Cloudflare Pages、GitHub Pagesで静的サイトとして公開でき�
 
 ## iPhoneとオフライン
 
-SafariでHTTPSの公開URLを開き、共有メニューから「ホーム画面に追加」を選択します。アイコン、manifest、Service Workerを同梱しています。初回にオンラインでキャッシュが完了すると、オフラインでもスクランブル生成・計測・保存ができます。同期は通信復帰後に再試行します。アプリの更新で計測を中断しないよう、Service Workerの即時切り替えは行いません。
+SafariでHTTPSの公開URLを開き、共有メニューから「ホーム画面に追加」を選択します。アイコン、manifest、Service Workerを同梱しています。初回にオンラインでキャッシュが完了すると、オフラインでもスクランブル生成・計測・保存ができます。通信が戻ったら「同期」を押して、端末内の変更を Google Drive に保存できます。アプリの更新で計測を中断しないよう、Service Workerの即時切り替えは行いません。
 
 Safariのプライベートブラウズやストレージ消去では記録を失う可能性があります。設定画面からJSONバックアップを保存できます。端末やブラウザによるストレージ保持の保証はありません。
 
@@ -82,7 +84,7 @@ Safariのプライベートブラウズやストレージ消去では記録を�
 - 最少手数の手数入力とmo3。複数目隠しの成功数・挑戦数・時間入力、ポイントとタイムによる順位付け。
 - テーマ、アクセント、長押し時間、表示桁数、計測中の表示、展開図の表示設定。
 - JSONのバックアップと復元、csTimer JSONの取り込み、CSV出力。csTimerの複数目隠し記録は対象外です。
-- Supabaseによるメール登録・ログイン・パスワード再設定、端末間同期。
+- メールでの登録・ログイン・パスワード再設定と、Google Drive を使った端末間の手動同期。
 
 aoNは上下それぞれ `ceil(N × 5%)` 件を除外し、残った値の平均を計算します。mo3では除外しません。残った値にDNFがある場合は平均もDNFです。ao50以降は練習用の指標で、WCAの公式競技形式ではありません。集計画面の単純平均はDNFを除外します。
 
@@ -99,7 +101,7 @@ aoNは上下それぞれ `ceil(N × 5%)` 件を除外し、残った値の平均
 - `node tests/hint-popover.mjs`: ヒントのワンクリック表示、設定の保持、ポップオーバーの配置と閉じる操作を確認。
 - `docs/screenshots/`: 自動操作で作成した記録を含む検証画面。利用者の初期データには含めません。
 
-Supabase実環境への接続、iPhone実機でのインストール、外部へのデプロイは接続情報・対象環境がないため未検証です。Stackmat、Bluetoothスマートキューブ、csTimerの全スクランブルカテゴリ・全カスタマイズは実装していません。
+実際の Supabase Auth と Google Drive への接続、iPhone実機でのインストール、外部へのデプロイは接続情報・対象環境がないため未検証です。Stackmat、Bluetoothスマートキューブ、csTimerの全スクランブルカテゴリ・全カスタマイズは実装していません。
 
 ## ライセンス
 

@@ -2,11 +2,19 @@ import { average, effective, formatTime, type Solve } from "../lib/model";
 export function Chart({
   solves,
   large = false,
+  limit = 100,
+  metric = "ao5",
+  end = solves.length,
 }: {
   solves: Solve[];
   large?: boolean;
+  limit?: number;
+  end?: number;
+  metric?: "best" | "ao5" | "ao12" | "ao50" | "ao100" | "ao500" | "ao1000";
 }) {
-  const rows = solves.slice(-100),
+  const last = Math.min(solves.length, Math.max(0, end));
+  const first = Math.max(0, last - limit);
+  const rows = solves.slice(first, last),
     values = rows.map(effective),
     finite = values.filter(Number.isFinite);
   if (!finite.length)
@@ -23,15 +31,25 @@ export function Chart({
         <span>記録するとグラフが表示されます</span>
       </div>
     );
-  const low = Math.max(0, Math.min(...finite) * 0.9),
-    high = Math.max(...finite) * 1.1 || 1000,
+  let best = Infinity;
+  const windowSize = metric === "best" ? 0 : Number(metric.slice(2));
+  const trend: (number | null)[] = [];
+  for (let i = 0; i < last; i++) {
+    best = Math.min(best, effective(solves[i]));
+    if (i < first) continue;
+    trend.push(metric === "best"
+      ? (Number.isFinite(best) ? best : null)
+      : average(solves.slice(Math.max(0, i + 1 - windowSize), i + 1), windowSize));
+  }
+  const plotted = [...finite, ...trend.filter((v): v is number => v !== null && Number.isFinite(v))];
+  const low = Math.max(0, Math.min(...plotted) * 0.9),
+    high = Math.max(...plotted) * 1.1 || 1000,
     w = 640,
     h = large ? 240 : 130;
   const x = (i: number) => 48 + (i * (w - 64)) / Math.max(1, rows.length - 1),
     y = (v: number) => 12 + ((high - v) / (high - low)) * (h - 40);
   const series = (vals: (number | null)[]) => {
-    let d = "",
-      pen = false;
+    let d = "", pen = false;
     vals.forEach((v, i) => {
       if (v === null || !Number.isFinite(v)) {
         pen = false;
@@ -42,15 +60,12 @@ export function Chart({
     });
     return d;
   };
-  const av = rows.map((_, i) =>
-    average(solves.slice(0, solves.length - rows.length + i + 1), 5),
-  );
   return (
     <div className="chart">
       <svg
         viewBox={`0 0 ${w} ${h}`}
         role="img"
-        aria-label={`直近${rows.length}回のタイム推移。最小${formatTime(Math.min(...finite))}、最大${formatTime(Math.max(...finite))}`}
+        aria-label={`${first + 1}回目から${last}回目のタイム推移。最小${formatTime(Math.min(...finite))}、最大${formatTime(Math.max(...finite))}`}
       >
         {[0, 0.5, 1].map((t) => {
           const v = low + (high - low) * t;
@@ -78,7 +93,7 @@ export function Chart({
           strokeWidth="1.5"
         />
         <path
-          d={series(av)}
+          d={series(trend)}
           fill="none"
           stroke="var(--accent-ink)"
           strokeWidth="2.5"
@@ -94,16 +109,16 @@ export function Chart({
                 fill="var(--accent-ink)"
               >
                 <title>
-                  #{solves.length - rows.length + i + 1} {formatTime(v)}
+                  #{first + i + 1} {formatTime(v)}
                 </title>
               </circle>
             ),
         )}
         <text x="48" y={h - 3} fill="var(--muted)" fontSize="11">
-          {Math.max(1, solves.length - rows.length + 1)}
+          {first + 1}
         </text>
         <text x={w - 25} y={h - 3} fill="var(--muted)" fontSize="11">
-          {solves.length}
+          {last}
         </text>
       </svg>
     </div>

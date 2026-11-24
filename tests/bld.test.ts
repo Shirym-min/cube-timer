@@ -1,0 +1,93 @@
+import { expect, it } from "vitest";
+import { bufferLetter, generateBld, loadBldScramble, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
+
+it("maps standard Speffz buffer stickers", () => {
+  expect(bufferLetter("EDGES", "UF")).toBe("C");
+  expect(bufferLetter("EDGES", "UR")).toBe("B");
+  expect(bufferLetter("EDGES", "DF")).toBe("U");
+  expect(bufferLetter("CORNERS", "UBL")).toBe("A");
+  expect(bufferLetter("CORNERS", "UFR")).toBe("C");
+});
+
+it("generates a legal scramble with independent cycle conditions, then verifies its memo", async () => {
+  const { pattern, scramble } = await generateBld({
+    EDGES: { min: 3, max: 3, breaks: "required", buffer: "DF" },
+    CORNERS: { min: 3, max: 3, breaks: "none", buffer: "UBL" },
+  });
+  expect(scramble).not.toBe("");
+  expect(pattern.patternData.EDGES.pieces[4]).toBe(4);
+  expect(pattern.patternData.CORNERS.pieces[2]).not.toBe(2);
+  const edges = traceMemo(pattern, "EDGES", "DF");
+  const corners = traceMemo(pattern, "CORNERS", "UBL");
+  expect(edges).toHaveLength(3);
+  expect(corners).toHaveLength(3);
+  expect(verifyMemo(pattern, "EDGES", "DF", edges)).toBe(0);
+  expect(verifyMemo(pattern, "CORNERS", "UBL", corners)).toBe(0);
+  expect(verifyMemo(pattern, "EDGES", "DF", edges.slice(0, -1))).toBeGreaterThan(0);
+  expect(() => verifyMemo(pattern, "EDGES", "DF", "U")).toThrow("交換先");
+}, 20000);
+
+it("rejects swap ranges that force different edge and corner parity", async () => {
+  await expect(generateBld({
+    EDGES: { min: 2, max: 2, breaks: "none", buffer: "UR" },
+    CORNERS: { min: 3, max: 3, breaks: "none", buffer: "UFR" },
+  })).rejects.toThrow("作成できません");
+});
+
+it("solves full scrambles using the guide's OP and M2/OP setup tables", async () => {
+  const { Alg } = await import("cubing/alg");
+  const { cube3x3x3 } = await import("cubing/puzzles");
+  const {
+    m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, opEdgeSetups, opParity, tPerm, yPerm,
+  } = await import("../src/lib/bldMethods");
+  const solved = (await cube3x3x3.kpuzzle()).defaultPattern();
+  const shot = (setup: string, base: string) =>
+    new Alg(setup).concat(new Alg(base)).concat(new Alg(setup).invert());
+  const specialLettersSeen = new Set<string>();
+  const scrambles = [
+    "R U F2 D' B2 L U2 R' F L2 D B U'",
+    "F2 D R' B L' U2 D2 F R U' L2 B' R2",
+    "D B2 R U' B L2 F U2 D' L' F2 B' R",
+    "U' L2 D' U R2 B' D' U' L2 B2 R' U' B' F' L U2 F R2 U'",
+  ];
+
+  for (const scramble of scrambles) {
+    const start = solved.applyAlg(scramble);
+    const corners = traceMemo(start, "CORNERS", "UBL");
+    for (const m2 of [false, true]) {
+      const edges = traceMemo(start, "EDGES", m2 ? "DF" : "UR");
+      let state = start;
+      [...edges].forEach((letter, index) => {
+        if (m2) {
+          if (m2Special[letter]) specialLettersSeen.add(letter);
+          const effective = index % 2 === 1 ? m2Even[letter] ?? letter : letter;
+          state = state.applyAlg(m2Special[effective] ?? shot(m2Setups[effective], "M2"));
+        } else {
+          state = state.applyAlg(shot(opEdgeSetups[letter], tPerm));
+        }
+      });
+      if (edges.length % 2) state = state.applyAlg(m2 ? m2Parity : opParity);
+      for (const letter of corners) {
+        state = state.applyAlg(shot(opCornerSetups[letter], yPerm));
+      }
+      expect(state.patternData).toEqual(solved.patternData);
+    }
+  }
+  expect(specialLettersSeen).toEqual(new Set(Object.keys(m2Special)));
+});
+
+it("loads pasted face turns and identifies a separate cycle in the review", async () => {
+  const options: BldOptions = {
+    EDGES: { min: 0, max: 16, breaks: "any", buffer: "UF" },
+    CORNERS: { min: 0, max: 10, breaks: "any", buffer: "UBL" },
+  };
+  const { scramble, pattern } = await loadBldScramble("  U  \n D′  ", options);
+  expect(scramble).toBe("U D'");
+  for (const [orbit, buffer] of [["EDGES", "UF"], ["CORNERS", "UBL"]] as const) {
+    const steps = traceMemoSteps(pattern, orbit, buffer);
+    expect(steps[0].kind).toBe("swap");
+    expect(steps.filter((step) => step.kind === "cycle-break")).toHaveLength(1);
+    expect(verifyMemo(pattern, orbit, buffer, steps.map(({ letter }) => letter).join(""))).toBe(0);
+  }
+  await expect(loadBldScramble("U Invalid", options)).rejects.toThrow("面回転");
+});

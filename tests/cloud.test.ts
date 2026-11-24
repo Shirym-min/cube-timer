@@ -1,39 +1,7 @@
-import { beforeEach, expect, it, vi } from "vitest";
-import type { Operation } from "../src/lib/model";
-const mock = vi.hoisted(() => ({
-  remote: [] as Operation[],
-  uploaded: [] as { id: string; user_id: string; operation: Operation }[],
-  scopes: [] as string[],
-  error: null as null | { message: string },
-}));
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: (_key: string, user: string) => {
-          mock.scopes.push(user);
-          return {
-            order: () => ({
-              range: async (from: number, to: number) => ({
-                data: mock.remote
-                  .slice(from, to + 1)
-                  .map((operation) => ({ operation })),
-                error: mock.error,
-              }),
-            }),
-          };
-        },
-      }),
-      upsert: async (rows: typeof mock.uploaded) => {
-        mock.uploaded.push(...rows);
-        return { error: mock.error };
-      },
-    }),
-  }),
-}));
-vi.stubEnv("VITE_SUPABASE_URL", "https://test.supabase.co");
-vi.stubEnv("VITE_SUPABASE_ANON_KEY", "public-test-key");
-const { syncOps } = await import("../src/lib/cloud");
+import { afterEach, expect, it, vi } from "vitest";
+import { DriveAuthorizationError, syncOps } from "../src/lib/cloud";
+import { materialize, type Operation } from "../src/lib/model";
+
 function op(): Operation {
   const sid = crypto.randomUUID();
   return {
@@ -44,30 +12,67 @@ function op(): Operation {
     value: { id: sid, name: "Practice", event: "333", createdAt: 1 },
   };
 }
-beforeEach(() => {
-  mock.remote = [];
-  mock.uploaded = [];
-  mock.scopes = [];
-  mock.error = null;
-});
-it("retrieves paginated remote operations and uploads only missing local operations scoped to the user", async () => {
-  mock.remote = Array.from({ length: 1001 }, op);
-  const local = op();
-  const result = await syncOps("user-a", [mock.remote[0], local]);
-  expect(result).toHaveLength(1002);
-  expect(mock.scopes).toEqual(["user-a", "user-a"]);
-  expect(mock.uploaded).toEqual([
-    { id: local.id, user_id: "user-a", operation: local },
-  ]);
-});
-it("does not upload after a failed pull or malformed remote data", async () => {
-  mock.error = { message: "offline" };
-  await expect(syncOps("user-a", [op()])).rejects.toEqual({
-    message: "offline",
+
+function drive(initial: unknown[][] = []) {
+  const files = new Map(initial.map((batch, i) => [String(i), batch]));
+  const fetch = vi.fn(async (input: string, init?: RequestInit) => {
+    const url = new URL(input);
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer token");
+    if (init?.method === "POST") {
+      expect(url.searchParams.get("uploadType")).toBe("multipart");
+      const parts = String(init.body).split("\r\n");
+      expect(JSON.parse(parts[3]).parents).toEqual(["appDataFolder"]);
+      const id = String(files.size);
+      files.set(id, JSON.parse(parts[7]));
+      return Response.json({ id });
+    }
+    if (url.searchParams.has("alt"))
+      return Response.json(files.get(url.pathname.split("/").at(-1)!));
+    expect(url.searchParams.get("spaces")).toBe("appDataFolder");
+    const index = Number(url.searchParams.get("pageToken") ?? 0);
+    const id = [...files.keys()][index];
+    return Response.json({
+      files: id === undefined ? [] : [{ id }],
+      nextPageToken: index + 1 < files.size ? String(index + 1) : undefined,
+    });
   });
-  expect(mock.uploaded).toHaveLength(0);
-  mock.error = null;
-  mock.remote = [{} as Operation];
-  await expect(syncOps("user-a", [op()])).rejects.toThrow();
-  expect(mock.uploaded).toHaveLength(0);
+  vi.stubGlobal("fetch", fetch);
+  return { files, fetch };
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+it("reads every page and uploads only missing operations", async () => {
+  const first = op(), second = op(), local = op();
+  const { files } = drive([[first], [second, first]]);
+  expect(await syncOps("token", [first, local])).toEqual([first, second, local]);
+  expect(files.get("2")).toEqual([local]);
+  expect(await syncOps("token", [first, local])).toEqual([first, second, local]);
+  expect(files.size).toBe(3);
+});
+
+it("preserves simultaneous uploads from two devices and converges after the next sync", async () => {
+  const base = op(), onA = op(), onB = op();
+  const edit = { ...base, id: crypto.randomUUID(), stamp: 2, value: { ...base.value, name: "Edited" } };
+  const deletion = { ...base, id: crypto.randomUUID(), stamp: 3, value: { ...base.value, deleted: true } };
+  const { files } = drive([[base]]);
+  await Promise.all([
+    syncOps("token", [base, edit, onA]),
+    syncOps("token", [base, deletion, onB]),
+  ]);
+  expect(files.size).toBe(3);
+  const a = await syncOps("token", [base, edit, onA]);
+  const b = await syncOps("token", [base, deletion, onB]);
+  expect(a).toEqual(b);
+  expect(a).toHaveLength(5);
+  expect(new Set(materialize(a).sessions.map(({ id }) => id))).toEqual(new Set([onA.entityId, onB.entityId]));
+});
+
+it("does not upload when authentication fails or a batch cannot be read", async () => {
+  const { fetch, files } = drive([[{}]]);
+  fetch.mockResolvedValueOnce(new Response(null, { status: 401 }));
+  await expect(syncOps("token", [op()])).rejects.toBeInstanceOf(DriveAuthorizationError);
+  await expect(syncOps("token", [op()])).rejects.toThrow("履歴を読み込めませんでした");
+  expect(files.size).toBe(1);
+  expect(fetch.mock.calls.every(([, init]) => init?.method !== "POST")).toBe(true);
 });

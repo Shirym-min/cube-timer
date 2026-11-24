@@ -26,6 +26,7 @@ type Props = {
   best: number | null;
   focus: boolean;
   setFocus: (f: boolean) => void;
+  manualMode: () => void;
 };
 export function TimerStage({
   settings,
@@ -43,6 +44,7 @@ export function TimerStage({
   best,
   focus,
   setFocus,
+  manualMode,
 }: Props) {
   const timer = useTimer(
     {
@@ -138,6 +140,9 @@ export function TimerStage({
           />
         )}
         <div className="timer-tools">
+          <button type="button" className="text-button" onClick={manualMode} disabled={!enabled}>
+            手入力
+          </button>
           <button
             className="icon-button"
             aria-label="集中表示"

@@ -368,24 +368,6 @@ kbd {
   gap: 20px;
   flex-shrink: 0;
 }
-.sync-indicator {
-  background: transparent;
-  border: 0;
-  font-size: 10px;
-  color: var(--muted);
-  padding: 0;
-  gap: 7px;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  background: #329779;
-  display: inline-block;
-  border-radius: 50%;
-}
-.status-dot.warning {
-  background: #ce8622;
-}
 .account-button {
   font-size: 11px;
   min-height: 34px;
@@ -551,7 +533,7 @@ kbd {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 9px 16px 11px;
+  padding: 6px 10px 8px;
   flex-shrink: 0;
 }
 .scramble-toolbar {
@@ -585,7 +567,7 @@ kbd {
   display: block;
   width: 100%;
   min-height: 44px;
-  padding: 4px;
+  padding: 2px;
   border: 0;
   background: transparent;
   font: inherit;
@@ -600,8 +582,8 @@ kbd {
 }
 .scramble-text {
   font-family: "DM Mono", monospace;
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 18px;
+  line-height: 1.45;
   text-align: center;
   letter-spacing: 0.3px;
   overflow-wrap: anywhere;
@@ -1183,17 +1165,6 @@ dialog::backdrop {
   border-radius: 6px;
   margin-top: 18px;
 }
-.account-empty {
-  display: grid;
-  gap: 18px;
-}
-.account-empty > svg {
-  color: var(--accent-ink);
-}
-.account-empty h3 {
-  font-size: 16px;
-  line-height: 1.6;
-}
 .account-email {
   overflow-wrap: anywhere;
 }
@@ -1385,7 +1356,7 @@ dialog::backdrop {
     padding: clamp(22px, 3dvh, 30px) clamp(30px, 3vw, 42px);
   }
   .scramble-text {
-    font-size: 18px;
+    font-size: 20px;
   }
   .timer-digits {
     font-size: 160px;
@@ -1519,12 +1490,6 @@ dialog::backdrop {
   .topbar-actions {
     gap: 10px;
   }
-  .sync-indicator span:last-child {
-    display: none;
-  }
-  .sync-indicator {
-    min-width: 15px;
-  }
   .account-button {
     font-size: 10px;
     min-height: 36px;
@@ -1597,8 +1562,8 @@ dialog::backdrop {
     max-width: 210px;
   }
   .scramble-text {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.45;
     letter-spacing: 0;
     max-height: 175px;
   }
@@ -1789,9 +1754,6 @@ dialog::backdrop {
   .event-selector select {
     max-width: 150px;
   }
-  .scramble-text {
-    font-size: 13px;
-  }
   .account-button span {
     display: none;
   }
@@ -1947,8 +1909,8 @@ dialog::backdrop {
     padding: 5px 10px 10px;
   }
   .mobile-timer .scramble-text {
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.45;
     max-height: min(20dvh, 125px);
     overflow: auto;
     overscroll-behavior: contain;
@@ -2584,7 +2546,7 @@ dialog[open][data-closing]::backdrop {
   }
   .mobile-timer .scramble-main {
     flex: 0 0 auto;
-    padding: 2px 6px 4px 10px;
+    padding: 1px 2px 3px 6px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
@@ -2797,4 +2759,145 @@ dialog[open][data-closing]::backdrop {
 }
 @media (prefers-reduced-motion: reduce) {
   .last-solve-sheet, .last-solve-sheet .last-actions { transition: none; }
+}
+
+.distribution-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px 16px;
+  margin: 0 0 20px;
+}
+.distribution-metrics dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+.distribution-metrics dd {
+  margin: 3px 0 0;
+  font: 16px "DM Mono", monospace;
+}
+.distribution-axis-title {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.distribution-chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 8px;
+  color: var(--muted);
+  font: 11px "DM Mono", monospace;
+}
+.distribution-chart svg {
+  display: block;
+  width: 100%;
+  height: 160px;
+  overflow: visible;
+}
+.distribution-counts {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: right;
+  margin-block: -0.5em;
+  line-height: 1;
+}
+.distribution-times {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+}
+.distribution-legend span:first-child i {
+  background: var(--accent-ink);
+  opacity: 0.35;
+  height: 7px;
+}
+.distribution-legend span:nth-child(2) i {
+  background: none;
+  border-top: 2px dashed var(--text);
+}
+
+.stats-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 12px;
+  margin-bottom: 20px;
+}
+.stats-period label {
+  min-width: 0;
+  gap: 4px;
+  color: var(--muted);
+}
+.stats-period input {
+  font-size: 16px;
+  padding-inline: 8px;
+}
+.stats-period button {
+  min-height: 42px;
+}
+.stats-period p {
+  flex-basis: 100%;
+}
+
+.stats-visuals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stats-visuals .stats-chart {
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+}
+.trend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.trend-controls label {
+  flex: 1 1 120px;
+  min-width: 0;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.trend-controls :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 6px 8px;
+  font-size: 16px;
+}
+.stats-visuals .chart svg { height: 170px; }
+.stats-visuals .distribution-chart svg { height: 130px; }
+@media (max-width: 760px) {
+  .stats-visuals { grid-template-columns: minmax(0, 1fr); }
+}
+
+.manual-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px 20px;
+}
+.manual-form {
+  width: min(100%, 360px);
+}
+@media (max-width: 760px) {
+  .mobile-timer .manual-stage {
+    min-height: 0;
+    padding: 42px 0 12px;
+    align-items: start;
+  }
+}
+@media (max-width: 760px) {
+  .mobile-timer .timer-tools {
+    display: flex;
+    z-index: 2;
+  }
+  .mobile-timer .timer-tools .icon-button {
+    display: none;
+  }
 }

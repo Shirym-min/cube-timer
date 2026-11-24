@@ -12,6 +12,7 @@ import {
   type Operation,
 } from "../src/lib/model";
 import { csvCell, parseImport } from "../src/lib/import";
+import { timeDistribution } from "../src/lib/timeDistribution";
 const solve = (ms: number, penalty: Solve["penalty"] = "OK"): Solve => ({
   id: crypto.randomUUID(),
   sessionId: "s",
@@ -24,6 +25,26 @@ const solve = (ms: number, penalty: Solve["penalty"] = "OK"): Solve => ({
   splits: [],
 });
 describe("statistics", () => {
+  it("computes population spread and percentiles and accounts for every observation", () => {
+    const result = timeDistribution([16000, 10000, 14000, 12000])!;
+    expect(result.deviation).toBeCloseTo(Math.sqrt(5_000_000));
+    expect(result.median).toBe(13000);
+    expect(result.q1).toBe(11500);
+    expect(result.q3).toBe(14500);
+    expect(result.p90).toBe(15400);
+    expect(result.bins.reduce((sum, count) => sum + count, 0)).toBe(4);
+    expect(result.curve.length).toBeGreaterThan(0);
+  });
+
+  it("handles empty and constant distributions", () => {
+    expect(timeDistribution([])).toBeNull();
+    const result = timeDistribution([0, 0])!;
+    expect(result.deviation).toBe(0);
+    expect(result.curve).toEqual([]);
+    expect(result.upper).toBeGreaterThan(result.lower);
+    expect(result.bins.reduce((sum, count) => sum + count, 0)).toBe(2);
+  });
+
   it("trims extremes, includes +2 and handles DNF", () => {
     expect(
       average(

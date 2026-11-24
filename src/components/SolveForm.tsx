@@ -12,11 +12,15 @@ export function SolveForm({
   event,
   save,
   remove,
+  autoFocus = true,
+  disabled = false,
 }: {
   solve?: Solve;
   event: EventId;
   save: (data: Partial<Solve>) => Promise<void>;
   remove?: () => Promise<void>;
+  autoFocus?: boolean;
+  disabled?: boolean;
 }) {
   const [time, setTime] = useState(solve ? formatTime(solve.ms) : ""),
     [penalty, setPenalty] = useState<Penalty>(solve?.penalty ?? "OK"),
@@ -80,7 +84,7 @@ export function SolveForm({
         <label>
           手数
           <input
-            autoFocus
+            autoFocus={autoFocus}
             type="number"
             min="0"
             max="999"
@@ -93,7 +97,7 @@ export function SolveForm({
         <label>
           タイム
           <input
-            autoFocus
+            autoFocus={autoFocus}
             inputMode="decimal"
             placeholder="12.345 または 1:23.456"
             value={time}
@@ -170,7 +174,7 @@ export function SolveForm({
           {error}
         </p>
       )}
-      <button className="primary" disabled={busy}>
+      <button className="primary" disabled={busy || disabled}>
         保存
       </button>
       {remove && (

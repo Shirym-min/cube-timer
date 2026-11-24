@@ -45,8 +45,12 @@ import { download, csvCell } from "./lib/import";
 import { accentColors } from "./lib/theme";
 import { Modal } from "./components/Modal";
 import { Chart } from "./components/Chart";
+import { TimeDistribution } from "./components/TimeDistribution";
 import { Settings } from "./components/Settings";
 import { Account } from "./components/Account";
+import { DriveSync } from "./components/DriveSync";
+import { auth, useAuth } from "./lib/auth";
+import { googleClientId } from "./lib/cloud";
 import { SolveForm } from "./components/SolveForm";
 const Diagram = lazy(() =>
   import("./components/Diagram").then((m) => ({ default: m.Diagram })),
@@ -59,6 +63,8 @@ const RecallTrainer = lazy(() =>
     default: m.RecallTrainer,
   })),
 );
+const BldTrainer = lazy(() => import("./components/BldTrainer").then((m) => ({ default: m.BldTrainer })));
+const BldGuide = lazy(() => import("./components/BldGuide").then((m) => ({ default: m.BldGuide })));
 const SolveVideo = lazy(() =>
   import("./components/SolveVideo").then((m) => ({ default: m.SolveVideo })),
 );
@@ -67,7 +73,7 @@ const AlgorithmLibrary = lazy(() =>
 );
 type ModalKind =
   "settings" | "account" | "manual" | "help" | "newSession" | null;
-const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video"] as const;
+const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide"] as const;
 type Page = (typeof pages)[number];
 
 function pageFromURL(): Page {
@@ -84,11 +90,15 @@ function pageURL(page: Page) {
 }
 
 export default function App() {
-  const store = useStore();
+  const account = useAuth();
+  const store = useStore(account.user?.id, account.ready);
   const [selected, setSelectedState] = useState(""),
     [page, setPage] = useState(pageFromURL),
+    [manualMode, setManualMode] = useState(false),
+    [manualCount, setManualCount] = useState(0),
     [mobileTab, setMobileTab] = useState<"timer" | "records">("timer"),
     [modal, setModal] = useState<ModalKind>(null),
+    [accountPanel, setAccountPanel] = useState<"login" | "drive">("login"),
     [editing, setEditing] = useState<Solve | null>(null),
     [scrambles, setScrambles] = useState<string[]>([]),
     [scrambleBusy, setScrambleBusy] = useState(true),
@@ -98,23 +108,38 @@ export default function App() {
     [toast, setToast] = useState({ text: "", visible: false }),
     [focus, setFocus] = useState(false),
     [pending, setPending] = useState<Solve | null>(null),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [chartLimit, setChartLimit] = useState("100"),
+    [chartEnd, setChartEnd] = useState(""),
+    [chartMetric, setChartMetric] = useState<"best" | "ao5" | "ao12" | "ao50" | "ao100" | "ao500" | "ao1000">("ao5"),
+    [statsFrom, setStatsFrom] = useState(""),
+    [statsTo, setStatsTo] = useState("");
   function setSelected(id: string) {
     setSelectedState(id);
     try {
-      localStorage.setItem(`split-session:${store.user?.id ?? "guest"}`, id);
+      localStorage.setItem(`split-session:${store.storageScope}`, id);
     } catch {}
   }
   useEffect(() => {
     try {
       setSelectedState(
-        localStorage.getItem(`split-session:${store.user?.id ?? "guest"}`) ??
+        localStorage.getItem(`split-session:${store.storageScope}`) ??
           "",
       );
     } catch {
       setSelectedState("");
     }
-  }, [store.user?.id]);
+  }, [store.storageScope]);
+  useEffect(() => {
+    if (account.recovery) {
+      setAccountPanel("login");
+      setModal("account");
+    }
+  }, [account.recovery]);
+  function openAccount() {
+    setAccountPanel(auth ? "login" : "drive");
+    setModal("account");
+  }
   const generation = useRef(0),
     session =
       store.sessions.find((s) => s.id === selected) ?? store.sessions[0],
@@ -125,12 +150,22 @@ export default function App() {
     () => store.solves.filter((s) => s.sessionId === session?.id),
     [store.solves, session?.id],
   );
+  const statsRangeInvalid = !!statsFrom && !!statsTo && statsFrom > statsTo;
+  const analysisSolves = useMemo(() => {
+    if (page !== "stats" || (!statsFrom && !statsTo)) return solves;
+    if (statsRangeInvalid) return [];
+    const start = statsFrom ? new Date(`${statsFrom}T00:00:00`).getTime() : -Infinity;
+    const nextDay = statsTo ? new Date(`${statsTo}T00:00:00`) : null;
+    // Advance the local calendar, including days that are shorter or longer than 24 hours.
+    const end = nextDay ? nextDay.setDate(nextDay.getDate() + 1) : Infinity;
+    return solves.filter(({ createdAt }) => createdAt >= start && createdAt < end);
+  }, [page, solves, statsFrom, statsTo, statsRangeInvalid]);
   const timed = !["333fm", "333mbf"].includes(event),
     latest = solves.at(-1),
     precision = store.settings.precision;
   const measures = useMemo(
-    () => [3, ...WINDOWS].map((n) => ({ n, ...summary(solves, n) })),
-    [solves],
+    () => [3, ...WINDOWS].map((n) => ({ n, ...summary(analysisSolves, n) })),
+    [analysisSolves],
   );
   const statsFormat = (n: number | null) =>
     event === "333fm"
@@ -224,9 +259,6 @@ export default function App() {
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
   }, [store.settings]);
-  useEffect(() => {
-    if (store.recovery) setModal("account");
-  }, [store.recovery]);
   useEffect(() => {
     if (!toast.visible) return;
     const t = setTimeout(() => setToast({ ...toast, visible: false }), 3500);
@@ -365,11 +397,11 @@ export default function App() {
   }
   const bestMulti =
     event === "333mbf"
-      ? [...solves]
+      ? [...analysisSolves]
           .filter((s) => s.penalty !== "DNF")
           .sort(compareMultiBlind)[0]
       : undefined;
-  const finite = solves.map(effective).filter(Number.isFinite),
+  const finite = analysisSolves.map(effective).filter(Number.isFinite),
     best = finite.length ? Math.min(...finite) : null,
     mean = finite.length ? finite.reduce((sum, time) => sum + time, 0) / finite.length : null;
   const currentAverage = (window: number) =>
@@ -422,12 +454,12 @@ export default function App() {
               aria-label={label}
               title={label}
               aria-current={
-                page === key || (key === "practice" && ["recall", "algorithms", "video"].includes(page))
+                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide"].includes(page))
                   ? "page"
                   : undefined
               }
               className={
-                page === key || (key === "practice" && ["recall", "algorithms", "video"].includes(page))
+                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide"].includes(page))
                   ? "active"
                   : ""
               }
@@ -469,7 +501,8 @@ export default function App() {
                         ? "動画解析"
                         : page === "algorithms"
                           ? "アルゴリズム集"
-                          : "練習"}
+                          : page === "bld" ? "BLD トレーナー"
+                            : page === "bld-guide" ? "BLD ガイド" : "練習"}
             </span>
             {(page === "timer" || page === "stats") && (
               <>
@@ -481,32 +514,27 @@ export default function App() {
             )}
           </div>
           <div className="topbar-actions">
-            {page !== "video" && (
+            {store.driveUser && page !== "video" && (
               <button
-                className="sync-indicator"
-                onClick={() =>
-                  store.user ? void store.sync() : setModal("account")
-                }
-                disabled={locked}
+                className="account-button"
+                onClick={() => void store.sync()}
+                disabled={locked || !store.loaded || store.syncStatus === "同期中"}
               >
-                <span
-                  className={`status-dot ${store.syncStatus === "同期を再試行" ? "warning" : ""}`}
-                />
-                <span>{store.user ? store.syncStatus : "この端末に保存"}</span>
+                <RefreshCw size={16} aria-hidden="true" />
+                <span>{store.syncStatus === "同期中" ? "同期中" : "同期"}</span>
               </button>
             )}
             <button
               className="account-button"
-              aria-label={store.user ? "アカウント" : "ログイン"}
-              onClick={() => setModal("account")}
+              onClick={openAccount}
               disabled={locked}
             >
               <Cloud size={17} />
-              <span>{store.user ? "アカウント" : "ログイン"}</span>
+              <span>{account.user || store.driveUser ? "アカウント" : "ログイン"}</span>
             </button>
           </div>
         </header>
-        {store.error && (
+        {store.error && (modal !== "account" || accountPanel !== "drive") && (
           <div className="error-banner" role="alert">
             <span>{store.error}</span>
             <button
@@ -694,7 +722,27 @@ export default function App() {
                     </div>
                   )}
                 </section>
-                <TimerStage
+                {manualMode ? (
+                  <section className="timer-stage manual-stage" aria-label="手入力">
+                    <div className="timer-tools">
+                      <button type="button" className="text-button" onClick={() => setManualMode(false)}>
+                        タイマー
+                      </button>
+                    </div>
+                    <div className="manual-form">
+                      <SolveForm
+                        key={`${session?.id}:${event}:${manualCount}`}
+                        event={event}
+                        autoFocus={false}
+                        disabled={!store.loaded || !session || scrambleBusy || !!scrambleError}
+                        save={async (data) => {
+                          await persistSolve({ ...newSolve(0, "OK", []), ...data });
+                          setManualCount((count) => count + 1);
+                        }}
+                      />
+                    </div>
+                  </section>
+                ) : <TimerStage
                   key={`${session?.id}:${multiCount}`}
                   settings={store.settings}
                   event={event}
@@ -721,7 +769,8 @@ export default function App() {
                   best={best}
                   focus={focus}
                   setFocus={setFocus}
-                />
+                  manualMode={() => { setFocus(false); setManualMode(true); }}
+                />}
                 <dl className="mobile-quick-stats" aria-label="セッションの統計">
                   {(timed
                     ? [
@@ -923,10 +972,30 @@ export default function App() {
                 ))}
               </select>
             </header>
+            <div className="stats-period" role="group" aria-label="集計期間">
+              <label>
+                開始日
+                <input type="date" value={statsFrom} onChange={(e) => setStatsFrom(e.target.value)} />
+              </label>
+              <label>
+                終了日
+                <input type="date" value={statsTo} onChange={(e) => setStatsTo(e.target.value)}
+                  aria-invalid={statsRangeInvalid || undefined}
+                  aria-describedby={statsRangeInvalid ? "stats-period-error" : undefined} />
+              </label>
+              {(statsFrom || statsTo) && (
+                <button onClick={() => { setStatsFrom(""); setStatsTo(""); }}>全期間に戻す</button>
+              )}
+              {statsRangeInvalid && (
+                <p className="error-text" id="stats-period-error" role="alert">
+                  終了日は開始日以降を指定してください。
+                </p>
+              )}
+            </div>
             <div className="summary-strip">
               <div>
                 <span>記録数</span>
-                <strong>{solves.length}</strong>
+                <strong>{analysisSolves.length}</strong>
               </div>
               <div>
                 <span>ベスト</span>
@@ -953,19 +1022,10 @@ export default function App() {
               <div>
                 <span>DNF</span>
                 <strong>
-                  {solves.filter((s) => s.penalty === "DNF").length}
+                  {analysisSolves.filter((s) => s.penalty === "DNF").length}
                 </strong>
               </div>
             </div>
-            {timed && (
-              <section className="stats-chart">
-                <div className="panel-heading">
-                  <h2>タイムの推移</h2>
-                  <span className="muted">直近100回 · 秒</span>
-                </div>
-                <Chart solves={solves} large />
-              </section>
-            )}
             {event !== "333mbf" && (
               <table className="statistics-table">
                 <thead>
@@ -988,6 +1048,46 @@ export default function App() {
                 </tbody>
               </table>
             )}
+            {timed && (
+              <div className="stats-visuals">
+                <section className="stats-chart">
+                  <div className="panel-heading">
+                    <h2>タイムの推移</h2>
+                  </div>
+                  <div className="trend-controls">
+                    <label>
+                      表示する記録数
+                      <input type="number" min="1" max="1000000" inputMode="numeric"
+                        value={chartLimit} onChange={(e) => setChartLimit(e.target.value)} />
+                    </label>
+                    <label>
+                      最後の記録番号
+                      <input type="number" min="1" max={Math.max(1, analysisSolves.length)} inputMode="numeric"
+                        placeholder={String(analysisSolves.length)} value={chartEnd}
+                        onChange={(e) => setChartEnd(e.target.value)} />
+                    </label>
+                    <label>
+                      推移
+                      <select value={chartMetric} onChange={(e) => setChartMetric(e.target.value as typeof chartMetric)}>
+                        <option value="best">ベストタイム</option>
+                        {[5, 12, 50, 100, 500, 1000].map((n) => (
+                          <option key={n} value={`ao${n}`}>ao{n}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <Chart solves={analysisSolves} large
+                    limit={Math.max(1, Math.min(1000000, Number(chartLimit) || 100))}
+                    end={chartEnd ? Math.min(analysisSolves.length, Math.max(1, Number(chartEnd) || analysisSolves.length)) : analysisSolves.length}
+                    metric={chartMetric} />
+                  <div className="chart-legend">
+                    <span><i />タイム</span>
+                    <span><i />{chartMetric === "best" ? "ベストタイム" : chartMetric}</span>
+                  </div>
+                </section>
+                <TimeDistribution times={finite} precision={precision} />
+              </div>
+            )}
             <div className="panel-heading">
               <h2>記録</h2>
               <button
@@ -1004,7 +1104,7 @@ export default function App() {
                       "scramble",
                       "comment",
                     ],
-                    ...solves.map((s) => [
+                    ...analysisSolves.map((s) => [
                       new Date(s.createdAt).toISOString(),
                       s.event,
                       s.ms,
@@ -1030,8 +1130,8 @@ export default function App() {
             </div>
             <div className="full-records">
               {(event === "333mbf"
-                ? [...solves].sort(compareMultiBlind)
-                : [...solves].reverse()
+                ? [...analysisSolves].sort(compareMultiBlind)
+                : [...analysisSolves].reverse()
               ).map((s) => (
                 <button key={s.id} onClick={() => setEditing(s)}>
                   <span>
@@ -1045,8 +1145,8 @@ export default function App() {
                   <ChevronRight size={16} />
                 </button>
               ))}
-              {!solves.length && (
-                <p className="muted">まだ記録がありません。</p>
+              {!analysisSolves.length && (
+                <p className="muted">{statsFrom || statsTo ? "指定期間の記録はありません。" : "まだ記録がありません。"}</p>
               )}
             </div>
           </main>
@@ -1068,6 +1168,15 @@ export default function App() {
                   <strong>Recall Trainer</strong>
                   <small>パターンを見て手順を練習</small>
                 </span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
+              <a
+                className="action-link practice-item"
+                href={pageURL("bld")}
+                onClick={(e) => followPage(e, "bld")}
+              >
+                <span className="practice-icon"><GraduationCap size={23} /></span>
+                <span><strong>BLD トレーナー</strong></span>
                 <ChevronRight size={18} aria-hidden="true" />
               </a>
               <a
@@ -1102,6 +1211,15 @@ export default function App() {
               practiceURL={pageURL("practice")}
               onBack={(e) => followPage(e, "practice")}
             />
+          </Suspense>
+        ) : page === "bld" || page === "bld-guide" ? (
+          <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
+            <BldTrainer active={page === "bld"}
+              backURL={pageURL("practice")} onBack={(e) => followPage(e, "practice")}
+              guideURL={pageURL("bld-guide")} onGuide={(e) => followPage(e, "bld-guide")} />
+            {page === "bld-guide" && (
+              <BldGuide backURL={pageURL("bld")} onBack={(e) => followPage(e, "bld")} />
+            )}
           </Suspense>
         ) : page === "video" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
@@ -1141,18 +1259,6 @@ export default function App() {
             </div>
           </main>
         )}
-        <footer className="app-footer">
-          <span>
-            <span className="footer-mark" />
-            SPLIT
-          </span>
-          <span>
-            {timer.active ? "計測を優先しています" : "スクランブル · cubing.js"}
-          </span>
-          <button onClick={() => setModal("help")} disabled={locked}>
-            操作ガイド <Keyboard size={13} />
-          </button>
-        </footer>
       </div>
       <div className="sr-only" role="status">{toast.visible ? toast.text : ""}</div>
       <div className="toast" aria-hidden="true" data-visible={toast.visible}>
@@ -1171,14 +1277,47 @@ export default function App() {
       )}
       {modal === "account" && (
         <Modal title="アカウントと同期" onClose={() => setModal(null)}>
-          <Account
-            user={store.user}
-            recovery={store.recovery}
-            doneRecovery={() => store.setRecovery(false)}
-            importGuest={store.importGuest}
-            sync={store.sync}
-            status={store.syncStatus}
-          />
+          <div className="stack">
+            {auth && googleClientId && (
+              <div className="segmented" role="group" aria-label="アカウントと同期">
+                <button
+                  type="button"
+                  className={accountPanel === "login" ? "selected" : ""}
+                  aria-pressed={accountPanel === "login"}
+                  onClick={() => setAccountPanel("login")}
+                >
+                  アカウント
+                </button>
+                <button
+                  type="button"
+                  className={accountPanel === "drive" ? "selected" : ""}
+                  aria-pressed={accountPanel === "drive"}
+                  onClick={() => setAccountPanel("drive")}
+                >
+                  Google Drive
+                </button>
+              </div>
+            )}
+            {accountPanel === "login" ? (
+              <Account
+                user={account.user}
+                ready={account.ready}
+                recovery={account.recovery}
+                doneRecovery={() => account.setRecovery(false)}
+              />
+            ) : (
+              <DriveSync
+                user={store.driveUser}
+                signIn={store.signIn}
+                signOut={store.signOut}
+                loaded={store.loaded}
+                error={store.error}
+                importGuest={store.importGuest}
+                sync={store.sync}
+                status={store.syncStatus}
+              />
+            )}
+          </div>
         </Modal>
       )}
       {(modal === "manual" || editing) && (
