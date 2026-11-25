@@ -63,3 +63,31 @@
 .statistics-table tbody td:last-child {
   color: var(--accent-ink);
 }
+
+@media (max-width: 760px) {
+  .summary-strip {
+    grid-template-columns: 1fr 1fr;
+    gap: 25px 0;
+    padding: 20px 0;
+  }
+  .summary-strip > div {
+    padding: 0 18px;
+  }
+  .summary-strip > div:nth-child(odd) {
+    padding-left: 0;
+  }
+  .summary-strip > div:nth-child(even) {
+    border: 0;
+  }
+  .summary-strip strong {
+    font-size: 24px;
+  }
+  .stats-chart {
+    padding: 17px 12px;
+  }
+  .statistics-table td,
+  .statistics-table th {
+    padding: 14px 9px;
+    font-size: 11px;
+  }
+}

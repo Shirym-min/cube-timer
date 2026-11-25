@@ -218,3 +218,34 @@ kbd {
   background: var(--surface);
   color: var(--muted);
 }
+.app {
+  display: flex;
+  min-height: 100dvh;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  button.primary:hover {
+    background: color-mix(in srgb, var(--accent) 90%, black);
+    color: var(--accent-foreground);
+  }
+}
+
+@media (max-width: 760px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

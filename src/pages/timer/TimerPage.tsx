@@ -1,12 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
 import { Chart } from "../../components/Chart/Chart";
-import { SolveForm } from "../../components/SolveForm";
-import { TimerStage } from "../../components/TimerStage";
+import { SolveForm } from "../../components/SolveForm/SolveForm";
+import { TimerStage } from "../../components/TimerStage/TimerStage";
 import type { EventId, Session, Settings, Solve } from "../../lib/model";
 import { pageURL, type FollowPage } from "../../navigation";
 import type { Statistics } from "../stats/useStatistics";
-import { RecordsPane } from "./RecordsPane";
-import { ScramblePanel } from "./ScramblePanel";
+import { RecordsPane } from "../../components/RecordsPane/RecordsPane";
+import { ScramblePanel } from "../../components/ScramblePanel/ScramblePanel";
 import type { useTimerSession } from "./useTimerSession";
 
 export type MobileTimerTab = "timer" | "records";

@@ -1,0 +1,15 @@
+.hint-button {
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  min-height: 28px;
+  padding: 4px;
+}
+
+@media (max-width: 760px) {
+  .hint-button {
+    min-height: 44px;
+  }
+  .hint-button { padding-inline: 10px; }
+}

@@ -6,7 +6,7 @@ import {
   type Solve,
   type EventId,
   type Penalty,
-} from "../lib/model";
+} from "../../lib/model";
 export function SolveForm({
   solve,
   event,

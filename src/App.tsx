@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Check, X } from "lucide-react";
-import { AppDialogs, type AccountPanel, type ModalKind } from "./components/AppDialogs";
-import { Sidebar } from "./components/Sidebar";
-import { TopBar } from "./components/TopBar";
+import { AppDialogs, type AccountPanel, type ModalKind } from "./components/AppDialogs/AppDialogs";
+import { Sidebar } from "./components/Sidebar/Sidebar";
+import { TopBar } from "./components/TopBar/TopBar";
 import { auth, useAuth } from "./lib/auth";
 import type { Session, Solve } from "./lib/model";
 import { useSession } from "./lib/useSession";

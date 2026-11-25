@@ -1,5 +1,5 @@
 import { Box, ChartNoAxesCombined, Keyboard, Layers, Settings2, Timer, Wrench } from "lucide-react";
-import { isToolPage, pageURL, type FollowPage, type Page } from "../navigation";
+import { isToolPage, pageURL, type FollowPage, type Page } from "../../navigation";
 
 const destinations = [
   ["timer", "タイマー", Timer, "1"],
@@ -27,9 +27,7 @@ export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {
         <span className="brand-icon">
           <Box size={24} strokeWidth={1.7} />
         </span>
-        <span>
-          SPLIT<span className="brand-dot">.</span>
-        </span>
+
       </a>
       <nav aria-label="メインナビゲーション">
         {destinations.map(([key, label, Icon, shortcut]) => {
@@ -48,7 +46,7 @@ export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {
               onClick={(e) => followPage(e, key)}
             >
               <Icon size={19} />
-              <span>{label}</span>
+
               <kbd className="shortcut-hint nav-shortcut" aria-hidden="true">{shortcut}</kbd>
             </a>
           );
@@ -57,15 +55,13 @@ export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {
       <div className="rail-bottom">
         <button aria-label="操作ガイド" disabled={locked} onClick={openHelp}>
           <Keyboard size={19} />
-          <span>操作ガイド</span>
+
         </button>
         <button aria-label="設定" disabled={locked} onClick={openSettings}>
           <Settings2 size={19} />
-          <span>設定</span>
+
         </button>
-        <div className="rail-caption">
-          CUBE TIMER <span>v1.0</span>
-        </div>
+
       </div>
     </aside>
   );

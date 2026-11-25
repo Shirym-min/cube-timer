@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { TwistyPlayer } from "cubing/twisty";
-import { EVENTS, type EventId } from "../lib/model";
+import { EVENTS, type EventId } from "../../lib/model";
 export function Diagram({
   event,
   scramble,

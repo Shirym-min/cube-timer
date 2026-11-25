@@ -1,0 +1,22 @@
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+  min-height: 28px;
+}
+.panel-heading h2 {
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .panel-heading {
+    margin-bottom: 8px;
+  }
+  .panel-heading h2 {
+    font-size: 11px;
+  }
+}
+
+.trend-panel .panel-heading { margin-bottom: 4px; }

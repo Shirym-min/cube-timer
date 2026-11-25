@@ -1,10 +1,5 @@
-@media (max-width: 760px) {
-  .recall-player { overflow: hidden; }
-  .recall-player twisty-player { transform: translateX(3%) scale(1.13); transform-origin: center; }
-}
 .shortcut-hint { color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; font-size: 9px; font-weight: 400; line-height: 1.4; }
 .primary .shortcut-hint { color: var(--accent-foreground); border-color: currentColor; }
-.nav-shortcut { margin-left: auto; }
 .icon-button:has(.icon-shortcut) { position: relative; }
 .icon-shortcut { position: absolute; right: -2px; bottom: -2px; background: var(--surface); padding: 0 3px; font-size: 8px; }
 @media (hover: none), (pointer: coarse), (max-width: 760px) { .shortcut-hint { display: none; } }
@@ -32,60 +27,15 @@ button { touch-action: manipulation; }
     transform: scale(0.97);
   }
 }
+
 .app[data-pointer-motion] #main-content {
   transition: opacity var(--motion-quick) var(--ease-out);
 }
 @media (max-width: 760px) {
-  .app[data-pointer-motion] .timer-workspace {
-    transition: opacity var(--motion-quick) var(--ease-out);
-  }
   @starting-style {
     .app[data-pointer-motion] :is(.timer-workspace, .records-pane) { opacity: 0.85; }
   }
 }
 @starting-style {
   .app[data-pointer-motion] #main-content { opacity: 0.85; }
-}
-
-dialog[open] {
-  --dialog-rest: none;
-  opacity: 1;
-  transform: none;
-  transition: opacity var(--motion-dialog) var(--ease-settle),
-    transform var(--motion-dialog) var(--ease-settle);
-}
-dialog[open]::backdrop {
-  opacity: 1;
-  transition: opacity var(--motion-dialog) var(--ease-settle);
-}
-@media (prefers-reduced-motion: no-preference) {
-  dialog[open] { --dialog-rest: translateY(8px) scale(0.97); }
-}
-dialog[open][data-closing] {
-  opacity: 0;
-  transform: var(--dialog-rest);
-  transition-duration: var(--motion-quick);
-}
-dialog[open][data-closing]::backdrop {
-  opacity: 0;
-  transition-duration: var(--motion-quick);
-}
-@starting-style {
-  dialog[open] {
-    opacity: 0;
-    transform: var(--dialog-rest);
-  }
-  dialog[open]::backdrop { opacity: 0; }
-}
-
-.toast {
-  pointer-events: none;
-  transition: opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
-}
-.toast[data-visible="false"] {
-  opacity: 0;
-  transform: translate(-50%, 6px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .toast[data-visible="false"] { transform: translateX(-50%); }
 }

@@ -1,0 +1,97 @@
+.last-solve-handle,
+.last-solve-delete {
+  display: none;
+}
+.last-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  height: 30px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.last-actions > span {
+  margin-right: 5px;
+}
+.last-actions button {
+  font-size: 10px;
+  padding: 3px 8px;
+  min-height: 25px;
+  border-radius: 4px;
+}
+
+@media (max-width: 760px) {
+  .last-actions {
+    font-size: 10px;
+    margin-top: 8px;
+  }
+  .last-actions button {
+    min-height: 32px;
+    padding: 4px 10px;
+  }
+  .last-solve-tray {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .last-solve-sheet {
+    --actions-travel: 52px;
+    transform: translateY(var(--actions-travel));
+    transition: transform var(--motion-panel) var(--ease-settle);
+  }
+  .last-solve-sheet[data-open] { transform: translateY(0); }
+  .last-solve-sheet[data-tracking] { transition: none; }
+  .last-solve-handle {
+    display: flex;
+    width: 64px;
+    height: 44px;
+    margin-inline: auto;
+    padding: 0;
+    border: 0;
+    background: var(--bg);
+    color: var(--muted);
+    touch-action: pan-x;
+    pointer-events: auto;
+  }
+  .last-solve-handle:focus-visible { outline-offset: -4px; }
+  .last-solve-sheet[data-open] .last-solve-handle svg { rotate: 180deg; }
+  .last-solve-sheet .last-actions {
+    height: var(--actions-travel);
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    visibility: hidden;
+    transition: visibility 0s var(--motion-panel);
+  }
+  .last-solve-sheet:is([data-open], [data-dragging]) .last-actions {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .last-solve-sheet[data-open]:not([data-tracking]) .last-actions {
+    pointer-events: auto;
+  }
+  .last-solve-sheet .last-actions > span {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .last-solve-sheet .last-actions button {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .last-solve-sheet, .last-solve-sheet .last-actions { transition: none; }
+}

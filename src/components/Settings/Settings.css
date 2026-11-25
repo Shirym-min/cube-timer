@@ -1,0 +1,53 @@
+.settings-form {
+  display: grid;
+  gap: 20px;
+}
+.settings-form h3:not(:first-child) {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 5px;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 32px;
+}
+.backup {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+.file-button {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  min-height: 38px;
+  padding: 8px 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  overflow: hidden;
+}
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+:root:not([data-pointer-focus]) .file-button:has(input:focus-visible) {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .settings-form select {
+    font-size: 14px;
+  }
+}

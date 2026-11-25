@@ -3,7 +3,7 @@ import { Chart } from "../../components/Chart/Chart";
 import { TimeDistribution } from "../../components/TimeDistribution/TimeDistribution";
 import { csvCell, download } from "../../lib/import";
 import { EVENTS, type EventId, type Session, type Solve } from "../../lib/model";
-import { StatsRecords } from "./StatsRecords";
+import { StatsRecords } from "../../components/StatsRecords/StatsRecords";
 import type { Statistics } from "./useStatistics";
 
 export function StatsPage({

@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { EventId, Session, Solve } from "../../lib/model";
 import { pageURL, type FollowPage } from "../../navigation";
-import { StatsRecords } from "./StatsRecords";
+import { StatsRecords } from "../../components/StatsRecords/StatsRecords";
 import type { Statistics } from "./useStatistics";
 
 export function StatsRecordsPage({ session, event, precision, stats, followPage, setEditing }: {

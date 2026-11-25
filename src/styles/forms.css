@@ -1,0 +1,41 @@
+.stack {
+  display: grid;
+  gap: 20px;
+}
+.inline-fields {
+  display: flex;
+  gap: 16px;
+}
+.inline-fields > label {
+  flex: 1;
+  min-width: 0;
+}
+.segmented {
+  display: flex;
+  background: var(--subtle);
+  padding: 4px;
+  border-radius: 8px;
+}
+.segmented button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+}
+.segmented button.selected {
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 1px 5px #14244710;
+}
+.error-text {
+  color: #c33c48;
+}
+.form-message {
+  font-size: 12px;
+  background: var(--subtle);
+  padding: 13px;
+  border-radius: 6px;
+  margin-top: 18px;
+}
+.account-email {
+  overflow-wrap: anywhere;
+}

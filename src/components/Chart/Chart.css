@@ -55,3 +55,12 @@
 .chart-empty.large {
   height: 240px;
 }
+
+@media (max-width: 760px) {
+  .chart-legend {
+    font-size: 10px;
+    padding-top: 8px;
+  }
+}
+
+.trend-panel .chart-legend { padding-top: 4px; }

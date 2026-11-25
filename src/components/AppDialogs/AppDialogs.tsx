@@ -1,15 +1,15 @@
 import { Maximize2 } from "lucide-react";
-import { auth, type useAuth } from "../lib/auth";
-import { googleClientId } from "../lib/cloud";
-import type { EventId, Solve } from "../lib/model";
-import type { useStore } from "../lib/useStore";
-import type { useTimerSession } from "../pages/timer/useTimerSession";
-import { Account } from "./Account";
-import { DriveSync } from "./DriveSync";
-import { Modal } from "./Modal/Modal";
-import { SessionForm } from "./SessionForm";
-import { Settings } from "./Settings";
-import { SolveForm } from "./SolveForm";
+import { auth, type useAuth } from "../../lib/auth";
+import { googleClientId } from "../../lib/cloud";
+import type { EventId, Solve } from "../../lib/model";
+import type { useStore } from "../../lib/useStore";
+import type { useTimerSession } from "../../pages/timer/useTimerSession";
+import { Account } from "../Account";
+import { DriveSync } from "../DriveSync";
+import { Modal } from "../Modal/Modal";
+import { SessionForm } from "../SessionForm";
+import { Settings } from "../Settings/Settings";
+import { SolveForm } from "../SolveForm/SolveForm";
 
 export type ModalKind = "settings" | "account" | "manual" | "help" | "newSession" | null;
 export type AccountPanel = "login" | "drive";

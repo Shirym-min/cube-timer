@@ -10,7 +10,7 @@ import { BldReview } from "../BldReview";
 import { BldGuide, BldSetup, type SetupTarget } from "../BldGuide";
 import { BldCommutator } from "../BldCommutator";
 import { BldLetters, BldSettings, BldPreviewContent, type BldExercise } from "../BldTrainerPanels";
-import { Diagram } from "../Diagram";
+import { Diagram } from "../Diagram/Diagram";
 import { Modal } from "../Modal/Modal";
 import "./BldTrainer.css";
 

@@ -1,5 +1,5 @@
 import { ChevronRight, Cloud, RefreshCw } from "lucide-react";
-import { pageTitles, type Page } from "../navigation";
+import { pageTitles, type Page } from "../../navigation";
 
 export function TopBar({
   page, sessionName, locked, hasAccount, hasDrive, syncing, canSync, sync, openAccount,

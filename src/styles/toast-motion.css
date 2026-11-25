@@ -1,0 +1,11 @@
+.toast {
+  pointer-events: none;
+  transition: opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
+}
+.toast[data-visible="false"] {
+  opacity: 0;
+  transform: translate(-50%, 6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast[data-visible="false"] { transform: translateX(-50%); }
+}

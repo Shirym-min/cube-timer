@@ -1,0 +1,9 @@
+.scramble-detail {
+  font:
+    12px/1.9 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 14px;
+  background: var(--subtle);
+  border-radius: 6px;
+}

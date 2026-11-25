@@ -54,3 +54,80 @@
 .page-heading select {
   max-width: 240px;
 }
+
+@media (max-width: 760px) {
+  .mobile-tabs {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    padding: 0 18px;
+    border-bottom: 1px solid var(--line);
+    height: 45px;
+    gap: 25px;
+  }
+  .mobile-tabs button {
+    border: 0;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    height: 45px;
+    min-width: 55px;
+    padding: 8px 3px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .mobile-tabs button.selected {
+    border-bottom-color: var(--accent-ink);
+    color: var(--accent-ink);
+  }
+  .mobile-tabs button span {
+    font-size: 9px;
+    background: var(--subtle);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .app-footer {
+    padding: 10px 18px;
+    min-height: 38px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .app-footer button {
+    display: none;
+  }
+  .app-footer > span:nth-child(2) {
+    font-size: 8px;
+  }
+  .page-content {
+    padding: 24px 18px;
+  }
+  .page-heading {
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .page-heading h1 {
+    font-size: 24px;
+  }
+  .page-heading select {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) and (min-height: 650px) {
+  .app:has(.mobile-timer) .app-footer {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .mobile-tabs,
+  .mobile-tabs button {
+    height: 40px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .page-content { padding: 12px; }
+}

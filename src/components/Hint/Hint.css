@@ -1,9 +1,3 @@
-.scramble-text :is(.scramble-sequence, .scramble-outgoing) {
-  display: block;
-  white-space: pre-wrap;
-  text-wrap: pretty;
-}
-
 .hint-popover {
   position: fixed;
   inset: auto;

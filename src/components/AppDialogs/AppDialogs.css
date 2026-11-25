@@ -1,0 +1,14 @@
+.help-content dl {
+  margin: 0;
+}
+.help-content dt {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.help-content dd {
+  margin: 0 0 24px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted);
+}

@@ -1,0 +1,33 @@
+.hint-content {
+  display: grid;
+  gap: 20px;
+}
+.hint-result {
+  background: var(--accent-soft);
+  padding: 17px;
+  display: grid;
+  gap: 10px;
+  border-radius: 7px;
+}
+.hint-result span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.hint-result strong {
+  font:
+    16px/1.8 var(--mono);
+  word-spacing: 3px;
+}
+.hint-preview {
+  height: 270px;
+}
+.hint-preview twisty-player {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-preview twisty-player {
+    --twisty-player-background: none;
+  }
+}

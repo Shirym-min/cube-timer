@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Download, Upload } from "lucide-react";
-import { download, parseImport } from "../lib/import";
-import type { Operation, Settings as Preferences } from "../lib/model";
+import { download, parseImport } from "../../lib/import";
+import type { Operation, Settings as Preferences } from "../../lib/model";
 export function Settings({
   value,
   save,

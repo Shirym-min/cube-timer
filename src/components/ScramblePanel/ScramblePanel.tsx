@@ -1,13 +1,13 @@
 import { lazy, Suspense, useState } from "react";
 import { Box, Lightbulb, RefreshCw } from "lucide-react";
 import { EVENTS, type EventId, type Settings } from "../../lib/model";
-import type { useTimerSession } from "./useTimerSession";
+import type { useTimerSession } from "../../pages/timer/useTimerSession";
 
 const Diagram = lazy(() =>
-  import("../../components/Diagram").then((m) => ({ default: m.Diagram })),
+  import("../Diagram/Diagram").then((m) => ({ default: m.Diagram })),
 );
 const Hint = lazy(() =>
-  import("../../components/Hint/Hint").then((m) => ({ default: m.Hint })),
+  import("../Hint/Hint").then((m) => ({ default: m.Hint })),
 );
 
 export function ScramblePanel({ event, locked, settings, changeEvent, state }: {

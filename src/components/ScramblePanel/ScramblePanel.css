@@ -1,0 +1,199 @@
+.scramble-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px 8px;
+  flex-shrink: 0;
+}
+.scramble-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.event-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-ink);
+}
+.event-selector select {
+  border: 0;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 30px;
+  padding: 3px 20px 3px 4px;
+  background: transparent;
+  color: var(--text);
+}
+.scramble-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.scramble-copy {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: normal;
+}
+.scramble-copy:disabled { color: inherit; opacity: 1; cursor: default; }
+.scramble-copy:focus-visible { outline-offset: -3px; }
+.scramble-refresh {
+  width: 44px;
+  min-height: 44px;
+}
+.scramble-text {
+  font-family: var(--mono);
+  font-size: 18px;
+  line-height: 1.45;
+  text-align: center;
+  letter-spacing: 0.3px;
+  overflow-wrap: anywhere;
+  max-height: 154px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+.scramble-text::-webkit-scrollbar {
+  display: none;
+}
+.scramble-text.loading {
+  color: var(--muted);
+}
+.scramble-text > span[role="alert"] {
+  white-space: normal;
+}
+
+@media (min-width: 1400px) {
+  .scramble-text {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  .event-selector select {
+    font-size: 11px;
+    max-width: 210px;
+  }
+  .scramble-text {
+    font-size: 16px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    max-height: 175px;
+  }
+}
+
+@media (max-width: 360px) {
+  .event-selector select {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 760px) and (min-height: 650px) {
+  .mobile-timer .scramble-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 5px 10px 10px;
+  }
+  .mobile-timer .scramble-text {
+    font-size: 16px;
+    line-height: 1.45;
+    max-height: min(20dvh, 125px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.scramble-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.scramble-panel:has(.diagram-panel) {
+  grid-template-columns: minmax(0, 1fr) clamp(140px, 19vw, 210px);
+  gap: 20px;
+}
+
+.scramble-main { min-width: 0; }
+
+.diagram-panel {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--line);
+}
+
+.diagram-panel .panel-heading {
+  justify-content: flex-end;
+  margin: 0;
+  min-height: 0;
+}
+
+.diagram-panel .panel-heading:empty { display: none; }
+
+@media (max-width: 760px) {
+  .scramble-panel:has(.diagram-panel) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .mobile-timer .scramble-panel {
+    padding: 5px 10px 9px;
+    min-height: 0;
+  }
+  .diagram-panel {
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    padding: 4px 0 0;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--line);
+  }
+  .diagram-panel .panel-heading {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .mobile-timer .scramble-panel,
+  .mobile-timer .scramble-panel:has(.diagram-panel) {
+    display: contents;
+  }
+  .mobile-timer .scramble-main {
+    flex: 0 0 auto;
+    padding: 1px 2px 3px 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    order: 0;
+  }
+  .mobile-timer .diagram-panel {
+    order: 2;
+    display: block;
+    width: 138px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+  }
+  .mobile-timer .diagram-panel .panel-heading {
+    justify-content: space-between;
+    gap: 4px;
+    min-height: 32px;
+  }
+  .mobile-timer .scramble-main {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .mobile-timer .diagram-panel {
+    grid-column: 2;
+    grid-row: 3;
+    width: 100%;
+    align-self: end;
+  }
+  .mobile-timer .diagram-panel .panel-heading {
+    justify-content: flex-end;
+  }
+}

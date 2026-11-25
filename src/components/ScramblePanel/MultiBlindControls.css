@@ -1,0 +1,28 @@
+.multi-controls {
+  display: flex;
+  gap: 15px;
+  margin: 12px 0;
+}
+.multi-controls label {
+  display: flex;
+  align-items: center;
+}
+.multi-controls input,
+.multi-controls select {
+  width: 70px;
+  min-height: 32px;
+  padding: 4px;
+}
+
+@media (max-width: 760px) {
+  .multi-controls input,
+  .multi-controls select {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 760px) and (min-height: 650px) {
+  .mobile-timer .multi-controls {
+    margin: 4px 0;
+  }
+}

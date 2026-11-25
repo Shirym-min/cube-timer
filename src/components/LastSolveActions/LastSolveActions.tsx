@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type PointerEvent } from "react";
 import { ChevronUp, MoreHorizontal } from "lucide-react";
-import { formatResult, type Settings, type Solve } from "../lib/model";
+import { formatResult, type Settings, type Solve } from "../../lib/model";
 
 type Props = {
   solve: Solve;

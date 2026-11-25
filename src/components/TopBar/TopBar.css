@@ -1,0 +1,80 @@
+.topbar {
+  height: 73px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  gap: 16px;
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--muted);
+  font-size: 11px;
+  min-width: 0;
+}
+.breadcrumb > span:first-child {
+  white-space: nowrap;
+}
+.current-session {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.account-button {
+  font-size: 11px;
+  min-height: 34px;
+  padding: 7px 13px;
+}
+
+@media (max-width: 1100px) {
+  .topbar {
+    padding: 0 25px;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 12px 0;
+    gap: 10px;
+  }
+  .breadcrumb {
+    gap: 8px;
+    font-size: 11px;
+  }
+  .breadcrumb > span:first-child {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .topbar-actions {
+    gap: 10px;
+  }
+  .account-button {
+    font-size: 10px;
+    min-height: 36px;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .account-button span {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .app .topbar { height: 40px; padding: 0 12px; }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { Maximize2, X } from "lucide-react";
-import { LastSolveActions } from "./LastSolveActions";
-import { useTimer, type Phase } from "../lib/useTimer";
+import { LastSolveActions } from "../LastSolveActions/LastSolveActions";
+import { useTimer, type Phase } from "../../lib/useTimer";
 import {
   average,
   formatTime,
@@ -9,7 +9,7 @@ import {
   type EventId,
   type Solve,
   type Penalty,
-} from "../lib/model";
+} from "../../lib/model";
 type Props = {
   settings: Settings;
   event: EventId;

@@ -15,15 +15,6 @@
     align-items: start;
   }
 }
-@media (max-width: 760px) {
-  .mobile-timer .timer-tools {
-    display: flex;
-    z-index: 2;
-  }
-  .mobile-timer .timer-tools .icon-button {
-    display: none;
-  }
-}
 
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
   .app,
@@ -34,34 +25,7 @@
     min-height: 100dvh;
     overflow: visible;
   }
-  .app .rail {
-    position: fixed;
-    inset: auto 0 0;
-    height: calc(50px + env(safe-area-inset-bottom));
-    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    width: 100%;
-    z-index: 5;
-    border-right: 0;
-    border-top: 1px solid var(--line);
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-  }
-  .app .rail .brand, .app .rail-caption, .app .rail nav kbd, .app .rail-bottom { display: none; }
-  .app .rail nav { display: flex; width: min(100%, 520px); justify-content: space-evenly; }
-  .app .rail nav a { height: 44px; padding: 4px 12px; }
-  .app .rail nav a.active:before { display: none; }
-  .app .topbar { height: 40px; padding: 0 12px; }
   .app:has(.mobile-timer) .app-main { height: auto; }
-  .timer-layout .timer-workspace { min-width: 0; padding: 8px 12px; }
-  .mobile-timer .timer-workspace { grid-template-rows: auto minmax(118px, 1fr) auto; }
-  .timer-layout .timer-stage { min-height: 132px; padding-block: 8px; }
   .timer-layout .timer-stage:has(.last-solve-tray) { padding-bottom: 32px; }
-  .timer-layout .timer-tools { display: flex; }
-  .timer-layout .timer-touch { min-height: 76px; }
-  .timer-layout .timer-digits:not(.text-value) { font-size: clamp(58px, 22vh, 104px); }
   .timer-layout .trend-panel, .app .app-footer { display: none; }
-  .timer-layout .records-pane { min-width: 0; }
-  .timer-layout .session-toolbar { height: auto; min-height: 44px; }
-  .page-content { padding: 12px; }
 }
