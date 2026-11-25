@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
 import { BldPlaybackCube } from "./BldPlaybackCube";
-import { previewCommutatorTargets, previewStepAlgorithm, type BldOptions, type PreviewFrame, type PreviewStep } from "../lib/bld";
+import { previewCommutatorTargets, previewStepAlgorithm, type BldOptions, type generateCommutator, type PreviewFrame, type PreviewStep } from "../lib/bld";
+
+type CommutatorResult = Awaited<ReturnType<typeof generateCommutator>>;
 
 export function BldSwapPreview({ frames, steps, options, view, onView }: {
   frames: PreviewFrame[];
@@ -14,10 +16,19 @@ export function BldSwapPreview({ frames, steps, options, view, onView }: {
   const [algorithm, setAlgorithm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [prepared, setPrepared] = useState<{ key: string; result?: CommutatorResult; error?: string }>();
   const worker = useRef<Worker>(null);
   const request = useRef(0);
   const pending = useRef<{ id: number; finishEmpty: () => void }>(null);
   const next = steps[index];
+  const previous = steps[index - 1];
+  const upcoming = next ?? previous;
+  const targets = upcoming?.moves && previewCommutatorTargets(options, upcoming.moves);
+  const orbit = targets?.orbit;
+  const letters = targets?.letters.join("");
+  const key = orbit && letters ? `${orbit}:${letters}` : undefined;
+  const commutator = prepared?.key === key ? prepared : undefined;
+  const preparing = Boolean(key && !commutator);
   const busy = loading || Boolean(algorithm);
 
   useEffect(() => () => {
@@ -25,6 +36,32 @@ export function BldSwapPreview({ frames, steps, options, view, onView }: {
     worker.current?.terminate();
     worker.current = null;
   }, []);
+
+  useEffect(() => {
+    if (!key || !orbit || !letters) return;
+    const id = ++request.current;
+    try {
+      const instance = worker.current ?? new Worker(
+        new URL("../lib/bldCommutator.worker.ts", import.meta.url), { type: "module" },
+      );
+      worker.current = instance;
+      instance.onmessage = ({ data }) => {
+        if (data.id === id) setPrepared({ key, result: data.result, error: data.error });
+      };
+      instance.onerror = () => {
+        instance.terminate();
+        worker.current = null;
+        setPrepared({ key, error: "コミュテーターを読み込めませんでした。" });
+      };
+      instance.postMessage({ id, orbit, letters: [...letters] });
+      return () => {
+        instance.onmessage = null;
+        instance.onerror = null;
+      };
+    } catch {
+      setPrepared({ key, error: "コミュテーターを読み込めませんでした。" });
+    }
+  }, [key, orbit, letters]);
 
   const advance = useCallback(() => {
     pending.current = null;
@@ -40,44 +77,24 @@ export function BldSwapPreview({ frames, steps, options, view, onView }: {
   }
 
   function play() {
-    if (!next || busy) return;
+    if (!next || busy || preparing) return;
     onView("3d");
     setError("");
-    if (next.algorithm) {
-      setAlgorithm(next.algorithm);
+    const execution = commutator?.result?.execution ?? next.algorithm;
+    if (execution) {
+      setAlgorithm(execution);
       return;
     }
+    if (key) return;
 
-    const moves = next.moves ?? [];
-    const targets = previewCommutatorTargets(options, moves);
     setLoading(true);
     const id = ++request.current;
     pending.current = { id, finishEmpty: advance };
-
-    if (!targets) {
-      // The cubing.js solver launches its own worker for parity and orientation.
-      void previewStepAlgorithm(options, moves).then(
-        (execution) => receive(id, execution),
-        (failure: unknown) => receive(id, undefined, failure instanceof Error ? failure.message : "交換手順を生成できませんでした。"),
-      );
-      return;
-    }
-    try {
-      if (!worker.current) {
-        const instance = new Worker(new URL("../lib/bldCommutator.worker.ts", import.meta.url), { type: "module" });
-        instance.onmessage = ({ data }) => receive(data.id, data.result?.execution, data.error);
-        instance.onerror = () => {
-          instance.terminate();
-          worker.current = null;
-          const current = pending.current;
-          if (current) receive(current.id, undefined, "交換手順を読み込めませんでした。");
-        };
-        worker.current = instance;
-      }
-      worker.current.postMessage({ id, ...targets });
-    } catch {
-      receive(id, undefined, "交換手順を読み込めませんでした。");
-    }
+    // The cubing.js solver launches its own worker for parity and orientation.
+    void previewStepAlgorithm(options, next.moves ?? []).then(
+      (execution) => receive(id, execution),
+      (failure: unknown) => receive(id, undefined, failure instanceof Error ? failure.message : "交換手順を生成できませんでした。"),
+    );
   }
 
   function receive(id: number, execution?: string, error?: string) {
@@ -90,8 +107,7 @@ export function BldSwapPreview({ frames, steps, options, view, onView }: {
     else current.finishEmpty();
   }
 
-  const previous = steps[index - 1];
-  const upcoming = next ?? previous;
+  const execution = algorithm || commutator?.result?.execution || upcoming?.algorithm;
   return (
     <div className="bld-section bld-swap-preview">
       <div className="bld-section bld-swap-controls">
@@ -103,12 +119,16 @@ export function BldSwapPreview({ frames, steps, options, view, onView }: {
         </div>
         {upcoming && <div className="bld-next-step">
           <p>{next ? "次の交換" : "最後の交換"} · {upcoming.label}</p>
-          {(algorithm || upcoming.algorithm) && <code translate="no">{algorithm || upcoming.algorithm}</code>}
+          {commutator?.result && <dl className="bld-guide-steps">
+            <div><dt>コミュテーター表記{commutator.result.setup && "（共役付き）"}</dt><dd><code translate="no">{commutator.result.alg}</code></dd></div>
+            <div><dt>実行手順</dt><dd><code translate="no">{execution}</code></dd></div>
+          </dl>}
+          {!commutator?.result && execution && <code translate="no">{execution}</code>}
         </div>}
-        <button type="button" className="primary" disabled={busy || !next} onClick={play}>
-          {loading ? "手順を生成中…" : algorithm ? "再生中…" : "この交換を再生"}
+        <button type="button" className="primary" disabled={busy || !next || preparing || Boolean(commutator?.error)} onClick={play}>
+          {loading || preparing ? "手順を生成中…" : algorithm ? "再生中…" : "この交換を再生"}
         </button>
-        {error && <p role="alert">{error}</p>}
+        {(error || commutator?.error) && <p role="alert">{error || commutator?.error}</p>}
       </div>
       {view === "3d" ? (
         <BldPlaybackCube pattern={frames[index].pattern} algorithm={algorithm} top="white"

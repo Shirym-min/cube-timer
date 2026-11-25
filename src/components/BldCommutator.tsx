@@ -78,7 +78,7 @@ export function BldCommutator() {
         <div className="bld-section">
           <dl className="bld-guide-steps">
             <div><dt>セットアップ</dt><dd><code>{result.setup || "なし"}</code></dd></div>
-            <div><dt>コミュテーター</dt><dd><code>{result.base}</code></dd></div>
+            <div><dt>コミュテーター表記{result.setup && "（共役付き）"}</dt><dd><code translate="no">{result.alg}</code></dd></div>
             <div><dt>実行手順（{result.moveCount}手）</dt><dd><code>{result.execution}</code></dd></div>
           </dl>
           <button type="button" onClick={async () => {
