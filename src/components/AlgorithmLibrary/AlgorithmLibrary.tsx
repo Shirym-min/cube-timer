@@ -1,21 +1,19 @@
-import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { ToolPageHeader, type ToolBackLink } from "../ToolPageHeader/ToolPageHeader";
 import { Alg } from "cubing/alg";
-import { ArrowUpRight, Check, ChevronRight, Copy, LayoutGrid, List } from "lucide-react";
-import library from "../data/algorithm-library.json";
-import { recallFaces } from "../lib/recallFaces";
-import { harrisBaumCodes, harrisBaumRecognition, harrisBaumStickers, type HarrisBaumCode } from "../lib/zbllRecognition";
-import { Modal } from "./Modal";
-import { RecallCube, recallMasks, type RecallMask } from "./RecallCube";
+import { ArrowUpRight, ChevronRight, LayoutGrid, List } from "lucide-react";
+import library from "../../data/algorithm-library.json";
+import { recallFaces } from "../../lib/recallFaces";
+import { harrisBaumCodes, harrisBaumRecognition, type HarrisBaumCode } from "../../lib/zbllRecognition";
+import { Modal } from "../Modal/Modal";
+import { recallMasks, type RecallMask } from "../RecallCube";
+import { AlgorithmDetail, CasePattern, type AlgorithmCase, type AlgorithmSet } from "../AlgorithmDetail";
 import "./AlgorithmLibrary.css";
 
-type SetName = keyof typeof library;
-type Variant = { alg: string; setup: string; moves: number; generated?: boolean };
-type Case = { name: string; group: string; variants: Variant[] };
 type CaseView = "list" | "grid";
 type CaseOrder = "group" | "name" | "recognition";
 
-const sets = Object.keys(library) as SetName[];
+const sets = Object.keys(library) as AlgorithmSet[];
 const groupLabels: Record<string, string> = {
   "No Edges": "反転エッジなし",
   "上面と同色のエッジ 0 枚": "0枚（ドット）",
@@ -37,8 +35,8 @@ function subscribeToCompactViewport(onChange: () => void) {
 }
 const compactViewport = () => matchMedia(compactQuery).matches;
 
-function groupCases(cases: Case[], key: (entry: Case) => string) {
-  const groups = new Map<string, Case[]>();
+function groupCases(cases: AlgorithmCase[], key: (entry: AlgorithmCase) => string) {
+  const groups = new Map<string, AlgorithmCase[]>();
   for (const entry of cases) {
     const group = key(entry);
     const members = groups.get(group);
@@ -48,34 +46,17 @@ function groupCases(cases: Case[], key: (entry: Case) => string) {
   return [...groups];
 }
 
-const CasePattern = memo(function CasePattern({
-  setup, set, mask, showHarrisBaum,
-}: { setup: string; set: SetName; mask?: RecallMask; showHarrisBaum: boolean }) {
-  return (
-    <RecallCube
-      alg={new Alg(setup).invert().toString()}
-      auf=""
-      view="net"
-      top="yellow"
-      sides={4}
-      rows={set === "F2L" ? 3 : 1}
-      mask={mask}
-      markStickers={showHarrisBaum ? harrisBaumStickers : undefined}
-    />
-  );
-});
-
 function CaseChoices({
   entries, view, set, mask, showHarrisBaum, compact, selected, onChoose,
 }: {
-  entries: Case[];
+  entries: AlgorithmCase[];
   view: CaseView;
-  set: SetName;
+  set: AlgorithmSet;
   mask?: RecallMask;
   showHarrisBaum: boolean;
   compact: boolean;
   selected?: string;
-  onChoose: (entry: Case, trigger: HTMLButtonElement) => void;
+  onChoose: (entry: AlgorithmCase, trigger: HTMLButtonElement) => void;
 }) {
   const list = useRef<HTMLUListElement>(null);
   const [visiblePatterns, setVisiblePatterns] = useState<ReadonlySet<string>>(() => new Set());
@@ -122,7 +103,7 @@ function CaseChoices({
 export function AlgorithmLibrary({
   backURL, onBack,
 }: ToolBackLink) {
-  const [set, setSet] = useState<SetName>("PLL");
+  const [set, setSet] = useState<AlgorithmSet>("PLL");
   const [group, setGroup] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<CaseView>("list");
@@ -132,11 +113,11 @@ export function AlgorithmLibrary({
   const [recognitionError, setRecognitionError] = useState(false);
   const [grayUnneeded, setGrayUnneeded] = useState(false);
   const [selectedCase, setSelectedCase] = useState("");
-  const [floatingCase, setFloatingCase] = useState<Case>();
+  const [floatingCase, setFloatingCase] = useState<AlgorithmCase>();
   const [shortFirst, setShortFirst] = useState(false);
   const modalTrigger = useRef<HTMLButtonElement>(null);
   const compact = useSyncExternalStore(subscribeToCompactViewport, compactViewport);
-  const cases: Case[] = library[set];
+  const cases: AlgorithmCase[] = library[set];
   const order = set !== "ZBLL" && caseOrder === "recognition" ? "group" : caseOrder;
   const showHarrisBaum = order === "recognition";
 
@@ -191,7 +172,7 @@ export function AlgorithmLibrary({
     onChoose: chooseCase,
   };
 
-  function changeSet(value: SetName) {
+  function changeSet(value: AlgorithmSet) {
     setSet(value);
     setGroup("");
     setCodeFilter("");
@@ -199,7 +180,7 @@ export function AlgorithmLibrary({
     setSelectedCase("");
   }
 
-  function chooseCase(entry: Case, trigger: HTMLButtonElement) {
+  function chooseCase(entry: AlgorithmCase, trigger: HTMLButtonElement) {
     setSelectedCase(entry.name);
     if (compact) {
       modalTrigger.current = trigger;
@@ -218,7 +199,7 @@ export function AlgorithmLibrary({
       <div className="algorithm-filters">
         <label>
           セット
-          <select value={set} onChange={(event) => changeSet(event.target.value as SetName)}>
+          <select value={set} onChange={(event) => changeSet(event.target.value as AlgorithmSet)}>
             {sets.map((name) => <option key={name}>{name}</option>)}
           </select>
         </label>
@@ -332,7 +313,7 @@ export function AlgorithmLibrary({
   );
 }
 
-function SourceLink({ set }: { set: SetName }) {
+function SourceLink({ set }: { set: AlgorithmSet }) {
   return (
     <a
       className="algorithm-source"
@@ -343,97 +324,5 @@ function SourceLink({ set }: { set: SetName }) {
     >
       SpeedCubeDB <ArrowUpRight size={13} aria-hidden="true" />
     </a>
-  );
-}
-
-function AlgorithmDetail({
-  entry, set, mask, codesBySetup, shortFirst, setShortFirst,
-}: {
-  entry: Case;
-  set: SetName;
-  mask?: RecallMask;
-  codesBySetup?: ReadonlyMap<string, HarrisBaumCode | null>;
-  shortFirst: boolean;
-  setShortFirst: (value: boolean) => void;
-}) {
-  const [selection, setSelection] = useState("");
-  const [copied, setCopied] = useState("");
-  const [copyError, setCopyError] = useState(false);
-  const variants = shortFirst
-    ? [...entry.variants].sort((a, b) => a.moves - b.moves)
-    : entry.variants;
-  const primary = entry.variants[0];
-  const active = variants.find(({ alg }) => alg === selection) ?? (codesBySetup ? primary : variants[0]);
-  const recognitionCode = codesBySetup?.get(active.setup);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = window.setTimeout(() => setCopied(""), 1600);
-    return () => window.clearTimeout(timer);
-  }, [copied]);
-
-  async function copy(value: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(label);
-      setCopyError(false);
-    } catch {
-      setCopied("");
-      setCopyError(true);
-    }
-  }
-
-  return (
-    <>
-      <div className="algorithm-pattern">
-        <div className="algorithm-illustration">
-          <CasePattern setup={active.setup} set={set} mask={mask} showHarrisBaum={!!codesBySetup} />
-        </div>
-        <div className="algorithm-setup">
-          <div className="algorithm-block-heading">
-            <h3>セットアップ</h3>
-            <button type="button" className="icon-button" aria-label="セットアップをコピー" title="セットアップをコピー" onClick={() => void copy(active.setup, "セットアップ")}>
-              {copied === "セットアップ" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-            </button>
-          </div>
-          <code>{active.setup}</code>
-          <small>黄色を上、青を手前に</small>
-          {recognitionCode && <small>Harris/Baum <strong>{recognitionCode}</strong></small>}
-          {recognitionCode === null && <small>このセットアップはHarris/Baum判別の対象外です。</small>}
-        </div>
-      </div>
-
-      <div className="algorithm-variants">
-        <div className="algorithm-block-heading">
-          <h3>手順 <small>{variants.length}件</small></h3>
-          <div className="algorithm-variant-actions">
-            <select aria-label="手順の並び順" value={shortFirst ? "short" : "source"} onChange={(event) => setShortFirst(event.target.value === "short")}>
-              <option value="source">収録順</option>
-              <option value="short">手数の少ない順</option>
-            </select>
-            <button type="button" className="icon-button" aria-label="選択した手順をコピー" title="選択した手順をコピー" onClick={() => void copy(active.alg, "手順")}>
-              {copied === "手順" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-            </button>
-          </div>
-        </div>
-        <div role="status" className={copyError ? "muted" : "sr-only"}>
-          {copyError ? "コピーできませんでした。" : copied && `${copied}をコピーしました。`}
-        </div>
-        <ul className="algorithm-variant-list">
-          {variants.map((variant) => (
-            <li key={variant.alg}>
-              <button
-                type="button"
-                aria-pressed={active.alg === variant.alg}
-                onClick={() => setSelection(variant.alg)}
-              >
-                <code>{variant.alg}</code>
-                <small>{variant.generated && <span>自動生成</span>}{variant.moves}手</small>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </>
   );
 }

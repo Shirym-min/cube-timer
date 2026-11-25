@@ -1,0 +1,64 @@
+.session-list {
+  display: grid;
+  gap: 15px;
+}
+.session-row {
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 9px;
+}
+.session-row.current {
+  border-left: 3px solid var(--accent);
+}
+.session-open {
+  display: flex;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  justify-content: flex-start;
+  padding: 0;
+  gap: 17px;
+  white-space: normal;
+}
+.session-open > span {
+  display: grid;
+  gap: 7px;
+  text-align: left;
+}
+.session-open > span strong {
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.session-open .session-current {
+  margin-left: auto;
+  background: var(--accent-soft);
+  padding: 5px 8px;
+  color: var(--accent-ink);
+  font-size: 10px;
+}
+.session-open > svg:last-child {
+  margin-left: auto;
+}
+.session-row-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.session-row-actions button {
+  font-size: 11px;
+  min-height: 33px;
+}
+.session-row-actions form {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.session-row-actions input {
+  min-width: 0;
+  min-height: 33px;
+}
+.session-row > p {
+  margin-top: 12px;
+}

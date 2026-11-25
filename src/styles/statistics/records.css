@@ -1,0 +1,19 @@
+.stats-record-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.stats-record-preview, .stats-record-grid { display: grid; gap: 8px; }
+.stats-record-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stats-record-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+:is(.stats-record-preview, .stats-record-grid) > button {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  min-width: 0;
+  text-align: left;
+  padding: 10px;
+  gap: 3px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.stats-record-preview, .stats-record-grid) strong { font-family: var(--mono); }
+:is(.stats-record-preview, .stats-record-grid) span { color: var(--muted); font-size: 11px; }
+.stats-record-preview > button > span:not(:first-child) { display: none; }
+.stats-record-back { padding-inline: 0; color: var(--muted); }

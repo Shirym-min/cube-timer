@@ -1,0 +1,476 @@
+.focus-mode .rail,
+.focus-mode .records-pane,
+.focus-mode .topbar,
+.focus-mode .trend-panel,
+.focus-mode .app-footer,
+.focus-mode .mobile-tabs {
+  display: none;
+}
+.focus-mode .timer-layout {
+  display: block;
+}
+.focus-mode .timer-workspace {
+  height: 100dvh;
+}
+.focus-mode .timer-stage {
+  min-height: 60dvh;
+}
+.focus-mode .timer-digits {
+  font-size: clamp(100px, 17vw, 250px);
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  button.primary:hover {
+    background: color-mix(in srgb, var(--accent) 90%, black);
+    color: var(--accent-foreground);
+  }
+  .records-table tbody tr:hover {
+    background: var(--subtle);
+  }
+  .timer-touch:hover .timer-digits {
+    color: var(--accent-ink);
+  }
+  .timer-stage.running .timer-touch:hover .timer-digits {
+    color: var(--text);
+  }
+}
+@media (min-width: 1101px) and (min-height: 780px) {
+  .app {
+    height: 100dvh;
+  }
+  .rail {
+    height: 100dvh;
+  }
+  .timer-workspace {
+    padding: 28px 34px 24px;
+  }
+  .timer-stage {
+    min-height: clamp(290px, 36dvh, 345px);
+  }
+  .records-scroll {
+    min-height: 0;
+  }
+  .timer-layout {
+    overflow: hidden;
+  }
+}
+@media (min-width: 1400px) {
+  .rail {
+    width: 208px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .timer-layout {
+    grid-template-columns: minmax(0, 1fr) 285px;
+  }
+  .timer-workspace {
+    padding: clamp(22px, 3dvh, 30px) clamp(30px, 3vw, 42px);
+  }
+  .scramble-text {
+    font-size: 20px;
+  }
+  .timer-digits {
+    font-size: 160px;
+  }
+}
+@media (max-width: 1100px) {
+  .rail {
+    width: 74px;
+    padding: 26px 10px 18px;
+  }
+  .brand {
+    padding: 0 10px 36px;
+  }
+  .brand > span:last-child,
+  .rail nav span,
+  .rail-bottom > button span,
+  .rail-caption {
+    display: none;
+  }
+  .brand-icon {
+    background: transparent;
+    color: var(--accent-ink);
+    width: 30px;
+  }
+  .brand-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  .rail nav a,
+  .rail-bottom > button {
+    justify-content: center;
+    padding: 10px;
+  }
+  .rail nav a.active:before {
+    left: -10px;
+  }
+  .topbar {
+    padding: 0 25px;
+  }
+  .timer-layout {
+    grid-template-columns: minmax(0, 1fr) 230px;
+  }
+  .timer-workspace {
+    padding: 22px;
+  }
+  .timer-stage {
+    min-height: 350px;
+  }
+  .timer-digits {
+    font-size: 110px;
+  }
+  .records-table td {
+    padding-right: 14px;
+  }
+  .records-table th {
+    padding-right: 14px;
+  }
+  .quick-stats strong {
+    font-size: 14px;
+  }
+}
+@media (max-width: 760px) {
+  .app {
+    display: block;
+    padding-bottom: calc(59px + env(safe-area-inset-bottom));
+  }
+  .rail {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    width: 100%;
+    height: calc(59px + env(safe-area-inset-bottom));
+    padding: 0 10px env(safe-area-inset-bottom);
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--surface);
+  }
+  .brand {
+    display: none;
+  }
+  .rail nav {
+    display: flex;
+    width: 75%;
+    gap: 0;
+    justify-content: space-around;
+  }
+  .rail nav a,
+  .rail-bottom > button {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 9px;
+    font-size: 9px;
+    height: 48px;
+    min-height: 44px;
+    min-width: 60px;
+    border-radius: 7px;
+  }
+  .rail nav a span,
+  .rail-bottom > button span {
+    display: block;
+  }
+  .rail nav a.active:before {
+    display: none;
+  }
+  .rail-bottom {
+    display: contents;
+  }
+  .rail-bottom > button:first-child {
+    display: none;
+  }
+  .topbar {
+    height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 12px 0;
+    gap: 10px;
+  }
+  .breadcrumb {
+    gap: 8px;
+    font-size: 11px;
+  }
+  .breadcrumb > span:first-child {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .topbar-actions {
+    gap: 10px;
+  }
+  .account-button {
+    font-size: 10px;
+    min-height: 36px;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  .mobile-tabs {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    padding: 0 18px;
+    border-bottom: 1px solid var(--line);
+    height: 45px;
+    gap: 25px;
+  }
+  .mobile-tabs button {
+    border: 0;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    height: 45px;
+    min-width: 55px;
+    padding: 8px 3px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .mobile-tabs button.selected {
+    border-bottom-color: var(--accent-ink);
+    color: var(--accent-ink);
+  }
+  .mobile-tabs button span {
+    font-size: 9px;
+    background: var(--subtle);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .timer-layout {
+    display: block;
+  }
+  .records-pane {
+    border: 0;
+    min-height: calc(100dvh - 200px);
+  }
+  .mobile-timer .records-pane {
+    display: none;
+  }
+  .mobile-records .timer-workspace {
+    display: none;
+  }
+  .records-scroll {
+    max-height: none;
+  }
+  .records-table {
+    font-size: 12px;
+  }
+  .records-table td,
+  .records-table th {
+    padding-right: 25px;
+  }
+  .records-table td button {
+    min-height: 38px;
+    font-size: 14px;
+  }
+  .timer-workspace {
+    padding: 16px 18px 20px;
+    overflow: visible;
+  }
+  .event-selector select {
+    font-size: 11px;
+    max-width: 210px;
+  }
+  .scramble-text {
+    font-size: 16px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    max-height: 175px;
+  }
+  .timer-stage {
+    min-height: 335px;
+    padding: 32px 0 25px;
+  }
+  .timer-digits {
+    font-size: 110px;
+  }
+  .timer-touch {
+    min-height: 130px;
+  }
+  .timer-tools {
+    top: 12px;
+    right: -5px;
+  }
+  .last-actions {
+    font-size: 10px;
+    margin-top: 8px;
+  }
+  .last-actions button {
+    min-height: 32px;
+    padding: 4px 10px;
+  }
+  .quick-stats {
+    margin-top: 24px;
+  }
+  .quick-stats > div {
+    padding: 0 5px;
+    gap: 8px;
+  }
+  .quick-stats span {
+    font-size: 10px;
+  }
+  .quick-stats strong {
+    font-size: 14px;
+  }
+  .panel-heading {
+    margin-bottom: 8px;
+  }
+  .panel-heading h2 {
+    font-size: 11px;
+  }
+  .hint-button {
+    min-height: 44px;
+  }
+  .chart-legend {
+    font-size: 10px;
+    padding-top: 8px;
+  }
+  .app-footer {
+    padding: 10px 18px;
+    min-height: 38px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .app-footer button {
+    display: none;
+  }
+  .app-footer > span:nth-child(2) {
+    font-size: 8px;
+  }
+  .page-content {
+    padding: 24px 18px;
+  }
+  .page-heading {
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .page-heading h1 {
+    font-size: 24px;
+  }
+  .page-heading select {
+    max-width: 100%;
+  }
+  .summary-strip {
+    grid-template-columns: 1fr 1fr;
+    gap: 25px 0;
+    padding: 20px 0;
+  }
+  .summary-strip > div {
+    padding: 0 18px;
+  }
+  .summary-strip > div:nth-child(odd) {
+    padding-left: 0;
+  }
+  .summary-strip > div:nth-child(even) {
+    border: 0;
+  }
+  .summary-strip strong {
+    font-size: 24px;
+  }
+  .stats-chart {
+    padding: 17px 12px;
+  }
+  .statistics-table td,
+  .statistics-table th {
+    padding: 14px 9px;
+    font-size: 11px;
+  }
+  .session-row {
+    padding: 16px;
+  }
+  .session-open {
+    gap: 12px;
+  }
+  .session-open > span strong {
+    font-size: 13px;
+  }
+  .session-row-actions {
+    gap: 8px;
+  }
+  dialog {
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 12px;
+  }
+  .modal-header {
+    padding: 15px 18px;
+  }
+  .modal-body {
+    padding: 20px;
+  }
+  .modal-header h2 {
+    font-size: 15px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .settings-form select {
+    font-size: 14px;
+  }
+  .stack > button {
+    min-height: 44px;
+  }
+  .error-banner {
+    padding: 10px 18px;
+    font-size: 11px;
+  }
+  .toast {
+    bottom: 85px;
+    font-size: 11px;
+  }
+  .focus-mode.app {
+    padding: 0;
+  }
+  .focus-mode .timer-workspace {
+    padding: 18px;
+  }
+  .focus-mode .timer-digits {
+    font-size: clamp(90px, 21vw, 140px);
+  }
+  .focus-mode .timer-stage {
+    min-height: 60dvh;
+  }
+  .pending-result {
+    bottom: 80px;
+    width: calc(100% - 30px);
+  }
+  .multi-controls input,
+  .multi-controls select {
+    font-size: 16px;
+  }
+}
+@media (max-width: 360px) {
+  .timer-digits {
+    font-size: 94px;
+  }
+  .quick-stats strong {
+    font-size: 12px;
+  }
+  .timer-workspace {
+    padding: 12px;
+  }
+  .event-selector select {
+    max-width: 150px;
+  }
+  .account-button span {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+  .hint-preview twisty-player {
+    --twisty-player-background: none;
+  }
+}

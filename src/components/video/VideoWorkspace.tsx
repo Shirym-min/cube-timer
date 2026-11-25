@@ -1,56 +1,19 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { useEffect, useRef, useState } from "react";
 import { Film, Pause, Play, SkipBack, SkipForward, Undo2 } from "lucide-react";
-import { TwistyPlayer } from "cubing/twisty";
-import { scanVideoMotion } from "../lib/scanVideoMotion";
+import { scanVideoMotion } from "../../lib/scanVideoMotion";
 import {
-  CAPTURE_FPS, checkScramble, pauseCandidates, reconstructSolve, regionBounds,
-  splitTimes, stages, type Interval, type Region, type Sample,
-} from "../lib/solveVideo";
-import {
-  createCubeTracker, cubeColors, stickerPoints, visibleFaces, type Point,
-} from "../lib/cubeVideoTracking";
-import { formatTime } from "../lib/model";
-import "./SolveVideo.css";
+  CAPTURE_FPS, checkScramble, pauseCandidates, splitTimes, stages,
+  type Interval, type Region, type Sample,
+} from "../../lib/solveVideo";
+import { createCubeTracker, cubeColors, stickerPoints, type Point } from "../../lib/cubeVideoTracking";
+import { CubeGuide, GuideLines, calibrationCorners, calibrationDiagram } from "./CubeGuide";
+import { ManualReplay, Replay } from "./VideoReplay";
+import { PauseResults, formatVideoTime } from "./PauseResults";
 
 const initialRegion = { x: 50, y: 50, size: 80 };
-const corners = ["上奥", "右上", "右下", "中央下", "左下", "左上", "3面が合わさる角"];
-const diagram = [[.5, .06], [.92, .30], [.92, .72], [.5, .96], [.08, .72], [.08, .30], [.5, .56]]
-  .map(([x, y]) => ({ x, y }));
-const time = (seconds: number | null) => formatTime(seconds === null ? null : Math.round(seconds * 1000));
 type Trace = ReturnType<Awaited<ReturnType<typeof createCubeTracker>>["result"]>;
-type Reconstruction = Awaited<ReturnType<typeof reconstructSolve>>;
 
-export function SolveVideo({ backURL, onBack }: ToolBackLink) {
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [clip, setClip] = useState<{ name: string; url: string } | null>(null);
-  useEffect(() => () => { if (clip) URL.revokeObjectURL(clip.url); }, [clip]);
-
-  return (
-    <main id="main-content" tabIndex={-1} className="page-content tool-page video-analysis">
-      <ToolPageHeader title="動画解析" backURL={backURL} onBack={onBack}>
-        {clip && <button onClick={() => fileInput.current?.click()}>動画を変更</button>}
-      </ToolPageHeader>
-      <input
-        hidden ref={fileInput} type="file" accept="video/*,.mov,.mp4"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) setClip({ name: file.name, url: URL.createObjectURL(file) });
-          event.target.value = "";
-        }}
-      />
-      {clip ? <VideoWorkspace key={clip.url} {...clip} /> : (
-        <div className="video-empty">
-          <Film size={34} strokeWidth={1.45} aria-hidden="true" />
-          <button className="primary" onClick={() => fileInput.current?.click()}>動画を選ぶ</button>
-          <p>3×3 のソルブ動画を端末内で解析します。</p>
-        </div>
-      )}
-    </main>
-  );
-}
-
-function VideoWorkspace({ name, url }: { name: string; url: string }) {
+export function VideoWorkspace({ name, url }: { name: string; url: string }) {
   const player = useRef<HTMLVideoElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const task = useRef<AbortController | null>(null);
@@ -212,14 +175,14 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
           }}>{playing && !busy ? <Pause size={17} /> : <Play size={17} />}</button>
           <button type="button" aria-label="前のコマ" disabled={!ready || busy || picking || position <= 0} onClick={() => seek(player.current!.currentTime - slowdown / CAPTURE_FPS)}><SkipBack size={17} /></button>
           <button type="button" aria-label="次のコマ" disabled={!ready || busy || picking || position >= duration} onClick={() => seek(player.current!.currentTime + slowdown / CAPTURE_FPS)}><SkipForward size={17} /></button>
-          <span className="video-time" aria-label="動画内の時刻">{time(position)}</span>
+          <span className="video-time" aria-label="動画内の時刻">{formatVideoTime(position)}</span>
           <input aria-label="動画の再生位置" type="range" min="0" max={duration || 1} step="any" value={position} disabled={!ready || busy || picking} onChange={(event) => seek(event.currentTarget.valueAsNumber)} />
         </div>
         {picking && (
           <div className="video-calibration">
-            <GuideLines points={diagram} numbered />
+            <GuideLines points={calibrationDiagram} numbered />
             <div>
-              <p role="status">{points.length + 1}. {corners[points.length]}を選択</p>
+              <p role="status">{points.length + 1}. {calibrationCorners[points.length]}を選択</p>
               {scanError && <p role="alert">{scanError}</p>}
               <div className="video-calibration-actions">
                 <button disabled={!points.length} onClick={() => { setPoints(points.slice(0, -1)); setScanError(""); }}>
@@ -266,7 +229,7 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
               <div className="video-anchor">
                 <p className="muted">最初の手を回す直前に止め、上・前・右の3面の角を指定してください。カメラが固定され、キューブの位置が大きく変わらない映像に対応します。</p>
                 <button disabled={!ready || seeking || picking || position >= duration} onClick={beginCalibration}>{stickers ? "3面を指定し直す" : "動画で3面を指定"}</button>
-                {stickers && anchor !== null && <button className="video-jump video-time" onClick={() => jump(anchor)} aria-label="解析の開始位置へ移動">{time(anchor)}</button>}
+                {stickers && anchor !== null && <button className="video-jump video-time" onClick={() => jump(anchor)} aria-label="解析の開始位置へ移動">{formatVideoTime(anchor)}</button>}
               </div>
               <details>
                 <summary>解析の終了位置</summary>
@@ -277,7 +240,7 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
                     clearResult();
                   }}>ここまで解析</button>
                   {end !== null && <>
-                    <button className="video-jump video-time" onClick={() => jump(end)}>{time(end)}</button>
+                    <button className="video-jump video-time" onClick={() => jump(end)}>{formatVideoTime(end)}</button>
                     <button onClick={() => { setEnd(null); clearResult(); }}>解除</button>
                   </>}
                 </div>
@@ -300,7 +263,7 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
           <section className="video-panel" aria-labelledby="video-split-title">
             <div className="video-panel-heading">
               <h2 id="video-split-title" ref={resultHeading} tabIndex={-1}>CFOP の推定結果</h2>
-              {total !== null && <span>合計 <b className="video-time">{time(total)}</b> 秒</span>}
+              {total !== null && <span>合計 <b className="video-time">{formatVideoTime(total)}</b> 秒</span>}
             </div>
             <div className="video-panel-body">
               {!result.trace
@@ -317,8 +280,8 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
                       return (
                         <tr key={label}>
                           <th scope="row">{label}</th>
-                          <td>{mark === null ? "—" : <button className="video-jump video-time" onClick={() => jump(mark)} aria-label={`${label}の完了位置へ移動（${time(mark)}）`}>{time(mark)}</button>}</td>
-                          <td className="video-time">{time(splits[index])}</td>
+                          <td>{mark === null ? "—" : <button className="video-jump video-time" onClick={() => jump(mark)} aria-label={`${label}の完了位置へ移動（${formatVideoTime(mark)}）`}>{formatVideoTime(mark)}</button>}</td>
+                          <td className="video-time">{formatVideoTime(splits[index])}</td>
                         </tr>
                       );
                     })}</tbody>
@@ -343,165 +306,4 @@ function VideoWorkspace({ name, url }: { name: string; url: string }) {
       </div>
     </div>
   );
-}
-
-function GuideLines({ points, numbered = false }: { points: Point[]; numbered?: boolean }) {
-  return (
-    <svg className={numbered ? "video-guide-diagram" : "video-guide-lines"} viewBox="0 0 100 100" preserveAspectRatio={numbered ? "xMidYMid meet" : "none"} aria-hidden="true">
-      {visibleFaces.map((face, index) => (
-        face.every((corner) => points[corner]) && <polygon key={index} points={face.map((corner) => `${points[corner].x * 100},${points[corner].y * 100}`).join(" ")} />
-      ))}
-      {numbered && points.map(({ x, y }, index) => <text key={index} x={x * 100} y={y * 100}>{index + 1}</text>)}
-    </svg>
-  );
-}
-
-function CubeGuide({ points, active, onPoint }: { points: Point[]; active: boolean; onPoint: (point: Point) => void }) {
-  const [cursor, setCursor] = useState({ x: .5, y: .5 });
-  const target = useRef<HTMLButtonElement>(null);
-  useEffect(() => { if (active) target.current?.focus(); }, [active]);
-  const next = corners[points.length];
-  function moveCursor(event: KeyboardEvent<HTMLButtonElement>) {
-    const shifts: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-    const shift = shifts[event.key];
-    if (!shift) return;
-    event.preventDefault();
-    const step = event.shiftKey ? .002 : .015;
-    const clamp = (value: number) => Math.max(0, Math.min(1, value));
-    setCursor({ x: clamp(cursor.x + shift[0] * step), y: clamp(cursor.y + shift[1] * step) });
-  }
-  return (
-    <div className="video-guide">
-      <GuideLines points={points} />
-      {points.map(({ x, y }, index) => <span className="video-guide-point" key={index} style={{ left: `${x * 100}%`, top: `${y * 100}%` }}>{index + 1}</span>)}
-      {active && (
-        <button
-          ref={target} className="video-guide-target" aria-label={`${next}を指定。矢印キーで移動し、Enterで決定`}
-          onKeyDown={moveCursor}
-          onClick={(event) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const point = event.detail === 0 ? cursor : {
-              x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height,
-            };
-            setCursor(point);
-            onPoint(point);
-          }}
-        ><span className="video-guide-cursor" style={{ left: `${cursor.x * 100}%`, top: `${cursor.y * 100}%` }}>+</span></button>
-      )}
-    </div>
-  );
-}
-
-function PauseResults({ range, candidates, slowdown, incomplete, sensitivity, minimum, seek, setSensitivity, setMinimum }: {
-  range: Interval; candidates: Interval[]; slowdown: number; incomplete: boolean;
-  sensitivity: number; minimum: number; seek: (seconds: number) => void;
-  setSensitivity: (value: number) => void; setMinimum: (value: number) => void;
-}) {
-  return (
-    <section className="video-panel video-pauses" aria-labelledby="video-pause-title">
-      <div className="video-panel-heading">
-        <h2 id="video-pause-title">停止候補</h2>
-        <span>{candidates.length} 件・合計 <b className="video-time">{time(candidates.reduce((sum, pause) => sum + pause.end - pause.start, 0) / slowdown)}</b> 秒</span>
-      </div>
-      <div className="video-panel-body">
-        {incomplete && <p className="muted">読み取れなかったフレームを含みます。</p>}
-        {candidates.length > 0 && <>
-          <div className="video-timeline" aria-hidden="true">
-            {candidates.map((pause) => <span key={pause.start} style={{ left: `${(pause.start - range.start) / (range.end - range.start) * 100}%`, width: `${(pause.end - pause.start) / (range.end - range.start) * 100}%` }} />)}
-          </div>
-          <ul className="video-pause-list" aria-label="停止候補の時刻">
-            {candidates.map((pause) => (
-              <li key={pause.start}>
-                <button onClick={() => seek(pause.start)}>
-                  <Play size={13} aria-hidden="true" />
-                  <span className="video-time">{time((pause.start - range.start) / slowdown)} – {time((pause.end - range.start) / slowdown)}</span>
-                  <strong className="video-time">{time((pause.end - pause.start) / slowdown)} 秒</strong>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>}
-        <details>
-          <summary>停止の検出設定</summary>
-          <div className="video-detection-settings">
-            <p className="muted">指定した3面の周辺を調べます。手やカメラの動きも検出に影響します。</p>
-            <label>動きの判定
-              <select value={sensitivity} onChange={(event) => setSensitivity(Number(event.currentTarget.value))}>
-                <option value="1">小さな動きも検出</option>
-                <option value="3">標準</option>
-                <option value="7">大きな動きを検出</option>
-              </select>
-            </label>
-            <label>停止の最短時間
-              <select value={minimum} onChange={(event) => setMinimum(Number(event.currentTarget.value))}>
-                <option value="0.1">0.10 秒</option>
-                <option value="0.2">0.20 秒</option>
-                <option value="0.35">0.35 秒</option>
-                <option value="0.5">0.50 秒</option>
-              </select>
-            </label>
-          </div>
-        </details>
-      </div>
-    </section>
-  );
-}
-
-function ManualReplay({ scramble }: { scramble: string }) {
-  const [moves, setMoves] = useState("");
-  const [reconstruction, setReconstruction] = useState<Reconstruction | null>(null);
-  const [error, setError] = useState("");
-  const [checking, setChecking] = useState(false);
-  useEffect(() => { setReconstruction(null); setError(""); }, [scramble]);
-  async function verify() {
-    setChecking(true);
-    setError("");
-    setReconstruction(null);
-    try {
-      setReconstruction(await reconstructSolve(scramble, moves));
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "手順を確認できませんでした。");
-    } finally {
-      setChecking(false);
-    }
-  }
-
-  return (
-    <details className="video-panel video-reconstruction">
-      <summary>手順を入力して確認</summary>
-      <div className="video-panel-body">
-        <label>解法手順
-          <textarea rows={3} value={moves} spellCheck={false} disabled={checking} onChange={(event) => {
-            setMoves(event.currentTarget.value);
-            setReconstruction(null);
-            setError("");
-          }} placeholder="R U R' …" />
-        </label>
-        <button disabled={checking || !scramble.trim() || !moves.trim()} onClick={() => void verify()}>{checking ? "確認中…" : "手順を読み込む"}</button>
-        {error && <p role="alert">{error}</p>}
-        {reconstruction && <>
-          <p role="status">{reconstruction.solved ? "入力した手順で全面が揃います。" : "入力した手順では全面が揃いません。"}</p>
-          <Replay reconstruction={reconstruction} />
-        </>}
-      </div>
-    </details>
-  );
-}
-
-function Replay({ reconstruction }: { reconstruction: Reconstruction }) {
-  const host = useRef<HTMLDivElement>(null);
-  const { scramble, moves } = reconstruction;
-  useEffect(() => {
-    const cube = new TwistyPlayer({
-      puzzle: "3x3x3",
-      experimentalSetupAlg: scramble,
-      alg: moves,
-      visualization: "2D",
-      background: "none",
-      hintFacelets: "none",
-    });
-    host.current?.replaceChildren(cube);
-    return () => cube.remove();
-  }, [scramble, moves]);
-  return <div className="video-replay" ref={host} aria-label="解法手順の再生" />;
 }

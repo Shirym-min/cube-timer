@@ -7,9 +7,9 @@ import {
 } from "../lib/bldMethods";
 import { BldHighlightCube, type Highlight } from "./BldHighlightCube";
 import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
-import { Modal } from "./Modal";
-import "./AlgorithmLibrary.css";
-import "./BldTrainer.css";
+import { Modal } from "./Modal/Modal";
+import "./AlgorithmLibrary/AlgorithmLibrary";
+import "./BldTrainer/BldTrainer";
 
 const setupMethods = ["M2 法", "Old Pochmann 法"] as const;
 const methods = [...setupMethods, "3-style"] as const;

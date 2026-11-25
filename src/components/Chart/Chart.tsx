@@ -1,4 +1,4 @@
-import { average, effective, formatTime, type Solve } from "../lib/model";
+import { average, effective, formatTime, type Solve } from "../../lib/model";
 export function Chart({
   solves,
   large = false,

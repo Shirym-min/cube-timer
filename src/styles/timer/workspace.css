@@ -1,0 +1,234 @@
+.timer-workspace {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  padding: 25px 30px 22px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.scramble-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px 8px;
+  flex-shrink: 0;
+}
+.scramble-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.event-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-ink);
+}
+.event-selector select {
+  border: 0;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 30px;
+  padding: 3px 20px 3px 4px;
+  background: transparent;
+  color: var(--text);
+}
+.scramble-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.scramble-copy {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: normal;
+}
+.scramble-copy:disabled { color: inherit; opacity: 1; cursor: default; }
+.scramble-copy:focus-visible { outline-offset: -3px; }
+.scramble-refresh {
+  width: 44px;
+  min-height: 44px;
+}
+.scramble-text {
+  font-family: var(--mono);
+  font-size: 18px;
+  line-height: 1.45;
+  text-align: center;
+  letter-spacing: 0.3px;
+  overflow-wrap: anywhere;
+  max-height: 154px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+.scramble-text::-webkit-scrollbar {
+  display: none;
+}
+.scramble-text.loading {
+  color: var(--muted);
+}
+.scramble-text > span[role="alert"] {
+  white-space: normal;
+}
+.timer-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 370px;
+  flex: 1;
+  padding: 40px 10px 28px;
+}
+.timer-tools {
+  position: absolute;
+  right: 0;
+  top: 16px;
+}
+.timer-readout {
+  position: relative;
+  width: 100%;
+}
+.timer-status {
+  position: absolute;
+  inset: auto 0 100%;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  pointer-events: none;
+}
+.timer-stage.ready .timer-status,
+.timer-stage.ready .timer-digits {
+  color: #188561;
+}
+.timer-stage.holding .timer-status,
+.timer-stage.holding .timer-digits {
+  color: #c28221;
+}
+.timer-touch {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  min-height: 145px;
+  border-radius: 8px;
+}
+.timer-digits {
+  font-size: clamp(74px, 8.6vw, 142px);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+}
+.timer-digits .decimals {
+  font-size: 0.64em;
+  letter-spacing: -0.035em;
+}
+.timer-digits .decimal-dot {
+  font-size: 0.75em;
+  margin-right: 0.04em;
+}
+.timer-digits.text-value {
+  font-size: clamp(50px, 7vw, 100px);
+}
+.last-solve-handle,
+.last-solve-delete {
+  display: none;
+}
+.last-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  height: 30px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.last-actions > span {
+  margin-right: 5px;
+}
+.last-actions button {
+  font-size: 10px;
+  padding: 3px 8px;
+  min-height: 25px;
+  border-radius: 4px;
+}
+.quick-stats {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 480px);
+  margin-top: 27px;
+}
+.quick-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  border-right: 1px solid var(--line);
+  padding: 0 12px;
+}
+.quick-stats > div:last-child {
+  border: 0;
+}
+.quick-stats span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.quick-stats strong {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+  min-height: 28px;
+}
+.panel-heading h2 {
+  font-size: 11px;
+}
+.diagram > div {
+  height: 100%;
+  width: 100%;
+}
+.diagram twisty-player {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.diagram-placeholder {
+  height: 150px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hint-button {
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  min-height: 28px;
+  padding: 4px;
+}

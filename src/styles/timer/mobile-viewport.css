@@ -1,0 +1,75 @@
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  html:has(.mobile-timer) {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Keep the primary mobile timer within the viewport; long scrambles scroll locally. */
+@media (max-width: 760px) {
+  .mobile-timer .trend-panel {
+    display: none;
+  }
+  .mobile-timer .timer-workspace {
+    position: relative;
+  }
+  .mobile-timer .quick-stats,
+  .mobile-timer .timer-tools {
+    display: none;
+  }
+}
+@media (max-width: 760px) and (min-height: 650px) {
+  .app:has(.mobile-timer) {
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: calc(59px + env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+  .app:has(.mobile-timer) .app-main {
+    height: 100%;
+  }
+  .app:has(.mobile-timer) .app-footer {
+    display: none;
+  }
+  .mobile-timer {
+    flex: 1;
+    min-height: 0;
+  }
+  .mobile-timer .timer-workspace {
+    height: 100%;
+    min-height: 0;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .mobile-timer .scramble-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 5px 10px 10px;
+  }
+  .mobile-timer .scramble-text {
+    font-size: 16px;
+    line-height: 1.45;
+    max-height: min(20dvh, 125px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .mobile-timer .timer-stage {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+  }
+  .mobile-timer .timer-touch {
+    min-height: 120px;
+  }
+  .mobile-timer .unsaved {
+    position: absolute;
+    bottom: 48px;
+    background: var(--surface);
+    padding: 8px;
+    z-index: 1;
+  }
+  .mobile-timer .multi-controls {
+    margin: 4px 0;
+  }
+}

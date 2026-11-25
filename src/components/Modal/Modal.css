@@ -1,0 +1,33 @@
+dialog.modal-sheet {
+  inset: auto 0 0;
+  margin: 0 auto;
+  border-radius: 18px 18px 0 0;
+}
+dialog.modal-sheet .modal-header { touch-action: none; padding-top: 22px; }
+dialog.modal-sheet .modal-header::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: calc(50% - 16px);
+  width: 32px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+dialog.modal-sheet .modal-body { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+dialog.modal-sheet[open] { transform: translateY(var(--sheet-drag, 0px)); }
+dialog.modal-sheet[open][data-dragging] { transition: none; }
+@media (prefers-reduced-motion: no-preference) {
+  dialog.modal-sheet[open][data-closing] { transform: translateY(100%); }
+  @starting-style {
+    dialog.modal-sheet[open] { transform: translateY(100%); }
+  }
+}
+@media (max-width: 760px), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  dialog.modal-sheet, dialog.modal-sheet.wide { width: 100%; max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); }
+  .app.is-running:not(.focus-mode) .rail {
+    opacity: 1;
+    visibility: visible;
+    transition: none;
+  }
+}

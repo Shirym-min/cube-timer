@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Lightbulb, Play, X } from "lucide-react";
 import { TwistyPlayer } from "cubing/twisty";
-import type { Settings } from "../lib/model";
+import type { Settings } from "../../lib/model";
 export function Hint({
   scramble,
   face,
@@ -90,7 +90,7 @@ export function Hint({
     setBusy(true);
     setShowPreview(false);
     const worker = new Worker(
-      new URL("../lib/hint.worker.ts", import.meta.url),
+      new URL("../../lib/hint.worker.ts", import.meta.url),
       { type: "module" },
     );
     worker.onmessage = (e) => {

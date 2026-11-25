@@ -1,0 +1,220 @@
+:root {
+  font-family:
+    system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  touch-action: pan-x pan-y;
+  color: #202b40;
+  background: #f5f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --bg: #f5f7fb;
+  --surface: #fff;
+  --subtle: #f8f9fc;
+  --text: #202b40;
+  --muted: #65718a;
+  --line: #e6eaf1;
+  --accent: #2459e0;
+  --accent-ink: #2459e0;
+  --accent-foreground: #fff;
+  --accent-soft: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  --motion-press: 120ms;
+  --motion-quick: 160ms;
+  --motion-panel: 200ms;
+  --motion-dialog: 280ms;
+  --ease-fluid: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #111824;
+  --surface: #182130;
+  --subtle: #1b2739;
+  --text: #e5ebf7;
+  --muted: #a1aec4;
+  --line: #2c394d;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg: #111824;
+    --surface: #182130;
+    --subtle: #1b2739;
+    --text: #e5ebf7;
+    --muted: #a1aec4;
+    --line: #2c394d;
+    color-scheme: dark;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+code, pre, kbd, samp { font-family: var(--mono); }
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+button:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-foreground);
+  min-height: 42px;
+}
+a {
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+:where(:root:not([data-pointer-focus])) :focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+:root[data-pointer-focus] :focus {
+  outline: none;
+}
+button svg {
+  flex-shrink: 0;
+}
+input,
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-height: 42px;
+  background: var(--surface);
+  color: var(--text);
+  max-width: 100%;
+  font-size: 13px;
+}
+select {
+  cursor: pointer;
+}
+input[type="color"] {
+  width: 100%;
+  padding: 5px;
+}
+input[type="checkbox"] {
+  width: 36px;
+  min-height: 22px;
+  height: 22px;
+  accent-color: var(--accent-ink);
+}
+label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.icon-button {
+  height: 34px;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+.text-button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  padding: 4px 0;
+  min-height: 30px;
+  font-size: 11px;
+}
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.danger {
+  color: #c33c48;
+}
+.selected {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
+}
+kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--muted);
+}

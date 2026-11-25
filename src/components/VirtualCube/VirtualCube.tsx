@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { ToolPageHeader, type ToolBackLink } from "../ToolPageHeader/ToolPageHeader";
 import { RotateCcw, Shuffle } from "lucide-react";
 import { cube3x3x3 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
 import { TwistyPlayer } from "cubing/twisty";
-import { cubeKeyRows, keyboardCubeMove, viewedCubeMove, pickCubeFace, swipeCubeMove, type CubeCamera, type CubeHit } from "../lib/virtualCube";
+import { cubeKeyRows, keyboardCubeMove, viewedCubeMove, pickCubeFace, swipeCubeMove, type CubeCamera, type CubeHit } from "../../lib/virtualCube";
 import "./VirtualCube.css";
 
 type CubeControls = {

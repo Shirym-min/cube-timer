@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
-import { Modal } from "./Modal";
-import { RecallCube, recallMasks } from "./RecallCube";
-import { topColors, type TopColor } from "../lib/recallFaces";
+import { ToolPageHeader, type ToolBackLink } from "../ToolPageHeader/ToolPageHeader";
+import { Modal } from "../Modal/Modal";
+import { RecallCube, recallMasks } from "../RecallCube";
+import { RecallControls, readSettings, recallCases, settingsKey, type RecallSettings } from "../RecallSettings";
 import {
   Pause,
   Play,
@@ -10,54 +10,6 @@ import {
   Eye,
   Settings2,
 } from "lucide-react";
-import existingCases from "../data/recall-cases.json";
-import extraCases from "../data/recall-extra-cases.json";
-
-const cases = { ...existingCases, ...extraCases };
-type SetName = keyof typeof cases;
-type View = "3d" | "top" | "net";
-type RecallSettings = {
-  set: SetName;
-  view: View;
-  seconds: number;
-  top: TopColor;
-  sides: number;
-  aufEnabled: boolean;
-  grayUnneeded: boolean;
-};
-const settingsKey = "split-recall-settings";
-const defaults: RecallSettings = {
-  set: "PLL",
-  view: "3d",
-  seconds: 5,
-  top: "yellow",
-  sides: 2,
-  aufEnabled: false,
-  grayUnneeded: false,
-};
-function readSettings(): RecallSettings {
-  try {
-    const saved = JSON.parse(localStorage.getItem(settingsKey) ?? "null") as
-      | Partial<RecallSettings>
-      | null;
-    if (!saved) return defaults;
-    const { set, view, seconds, top, sides, aufEnabled, grayUnneeded } = saved;
-    return {
-      set: set && Object.hasOwn(cases, set) ? set : defaults.set,
-      view: view === "3d" || view === "top" || view === "net" ? view : defaults.view,
-      seconds:
-        typeof seconds === "number" && Number.isInteger(seconds) && seconds >= 1 && seconds <= 10
-          ? seconds
-          : defaults.seconds,
-      top: top && topColors.some(([color]) => color === top) ? top : defaults.top,
-      sides: sides === 2 || sides === 3 || sides === 4 ? sides : defaults.sides,
-      aufEnabled: aufEnabled === true,
-      grayUnneeded: grayUnneeded === true,
-    };
-  } catch {
-    return defaults;
-  }
-}
 
 export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
   const [settings, setSettings] = useState(readSettings);
@@ -66,12 +18,12 @@ export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
     [running, setRunning] = useState(false),
     [reveal, setReveal] = useState(false),
     [index, setIndex] = useState(() =>
-      Math.floor(Math.random() * cases[set].length),
+      Math.floor(Math.random() * recallCases[set].length),
     ),
     [remaining, setRemaining] = useState(seconds),
     [settingsOpen, setSettingsOpen] = useState(false);
   const deadline = useRef(0),
-    current = cases[set][index % cases[set].length];
+    current = recallCases[set][index % recallCases[set].length];
   function updateSettings(patch: Partial<RecallSettings>) {
     setSettings((previous) => ({ ...previous, ...patch }));
   }
@@ -81,7 +33,7 @@ export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
     } catch {}
   }, [settings]);
   function next() {
-    const count = cases[set].length;
+    const count = recallCases[set].length;
     let n = Math.floor(Math.random() * Math.max(1, count - 1));
     if (n >= index && count > 1) n++;
     setIndex(n % count);
@@ -97,7 +49,7 @@ export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
     setAuf(
       aufEnabled ? ["", "U", "U2", "U'"][Math.floor(Math.random() * 4)] : "",
     );
-    setIndex(Math.floor(Math.random() * cases[set].length));
+    setIndex(Math.floor(Math.random() * recallCases[set].length));
     setReveal(false);
     setRemaining(seconds);
   }, [set]);
@@ -153,109 +105,18 @@ export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [settingsOpen, set, index, seconds, aufEnabled]);
-  const controls = (
-    <div className="recall-controls">
-      <label>
-        パターン
-        <select
-          aria-label="パターン"
-          value={set}
-          onChange={(e) => updateSettings({ set: e.target.value as SetName })}
-        >
-          {Object.keys(cases).map((k) => (
-            <option key={k}>{k}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        表示
-        <select
-          aria-label="表示"
-          value={view}
-          onChange={(e) => updateSettings({ view: e.target.value as View })}
-        >
-          <option value="3d">3D</option>
-          <option value="top">上面</option>
-          <option value="net">上面と側面</option>
-        </select>
-      </label>
-      <label>
-        上面の色
-        <select
-          aria-label="上面の色"
-          value={top}
-          onChange={(e) => updateSettings({ top: e.target.value as TopColor })}
-        >
-          {topColors.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {view === "net" && (
-        <label>
-          側面の数
-          <select
-            aria-label="側面の数"
-            value={sides}
-            onChange={(e) => updateSettings({ sides: Number(e.target.value) })}
-          >
-            <option value="2">2面</option>
-            <option value="3">3面</option>
-            <option value="4">4面</option>
-          </select>
-        </label>
-      )}
-      {view === "net" && (
-        <label className="recall-mask-setting">
-          <input
-            type="checkbox"
-            checked={grayUnneeded}
-            onChange={(e) => updateSettings({ grayUnneeded: e.target.checked })}
-          />
-          <span>判別に不要な部分を灰色にする</span>
-        </label>
-      )}
-      <label>
-        AUF
-        <select
-          aria-label="AUF"
-          value={aufEnabled ? "random" : "none"}
-          onChange={(e) => {
-            const enabled = e.target.value === "random";
-            updateSettings({ aufEnabled: enabled });
-            setAuf(
-              enabled
-                ? ["", "U", "U2", "U'"][Math.floor(Math.random() * 4)]
-                : "",
-            );
-            setReveal(false);
-          }}
-        >
-          <option value="none">なし</option>
-          <option value="random">ランダム</option>
-        </select>
-      </label>
-      <label className="recall-interval">
-        <span>切り替え間隔 <output>{seconds}秒</output></span>
-        <input
-          aria-label="切り替え間隔"
-          aria-valuetext={`${seconds}秒`}
-          type="range"
-          min={1}
-          max={10}
-          step={1}
-          value={seconds}
-          onChange={(e) => updateSettings({ seconds: e.target.valueAsNumber })}
-        />
-      </label>
-    </div>
-  );
+
+  function changeAuf(enabled: boolean) {
+    updateSettings({ aufEnabled: enabled });
+    setAuf(enabled ? ["", "U", "U2", "U'"][Math.floor(Math.random() * 4)] : "");
+    setReveal(false);
+  }
+
+  const controls = <RecallControls settings={settings} updateSettings={updateSettings} changeAuf={changeAuf} />;
   return (
     <main id="main-content" tabIndex={-1} className="page-content tool-page recall-page">
       <ToolPageHeader title="Recall Trainer" backURL={backURL} onBack={onBack}>
-        <span className="recall-count">{cases[set].length} ケース</span>
+        <span className="recall-count">{recallCases[set].length} ケース</span>
         <button
           className="recall-settings-button"
           onClick={() => {

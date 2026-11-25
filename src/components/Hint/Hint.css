@@ -1,0 +1,89 @@
+.scramble-text :is(.scramble-sequence, .scramble-outgoing) {
+  display: block;
+  white-space: pre-wrap;
+  text-wrap: pretty;
+}
+
+.hint-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 32px #10244824;
+  max-width: calc(100vw - 32px);
+}
+.hint-popover[data-pointer-motion] {
+  --hint-rest: scale(0.82);
+  --hint-travel: 360ms;
+  opacity: 0;
+  transform: var(--hint-rest);
+  pointer-events: none;
+  transition: opacity var(--motion-quick) var(--ease-settle),
+    transform var(--motion-quick) var(--ease-settle);
+  transition:
+    opacity var(--motion-quick) var(--ease-settle),
+    transform var(--motion-quick) var(--ease-settle),
+    display var(--motion-quick) allow-discrete,
+    overlay var(--motion-quick) allow-discrete;
+}
+.hint-popover[data-pointer-motion]:popover-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--hint-travel);
+  transition-timing-function: var(--ease-fluid), var(--ease-fluid), ease, ease;
+}
+@starting-style {
+  .hint-popover[data-pointer-motion]:popover-open {
+    opacity: 0;
+    transform: var(--hint-rest);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint-popover[data-pointer-motion] { --hint-rest: none; }
+  .hint-popover[data-pointer-motion]:popover-open {
+    transition-duration: var(--motion-quick);
+  }
+}
+.hint-popover::backdrop {
+  background: transparent;
+}
+.hint-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px 10px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.hint-popover-header h3 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.hint-popover-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+}
+.hint-popover .hint-result {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  gap: 8px;
+}
+.hint-popover .hint-result strong {
+  font-size: 17px;
+  color: var(--text);
+}
+.hint-popover .text-button {
+  justify-self: start;
+  color: var(--accent-ink);
+}
+.hint-popover .hint-preview {
+  height: 230px;
+}

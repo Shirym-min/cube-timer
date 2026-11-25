@@ -1,6 +1,6 @@
 import { useId } from "react";
-import { formatTime, type Settings } from "../lib/model";
-import { timeDistribution } from "../lib/timeDistribution";
+import { formatTime, type Settings } from "../../lib/model";
+import { timeDistribution } from "../../lib/timeDistribution";
 
 const seconds = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 3 });
 

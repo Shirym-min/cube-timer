@@ -1,0 +1,34 @@
+.practice-item {
+  display: flex;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  justify-content: flex-start;
+  padding: 22px;
+  gap: 18px;
+  white-space: normal;
+}
+.practice-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+  max-width: 860px;
+}
+.practice-item > span:nth-child(2) {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}
+.practice-item strong {
+  font-size: 15px;
+}
+.practice-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-radius: 9px;
+}

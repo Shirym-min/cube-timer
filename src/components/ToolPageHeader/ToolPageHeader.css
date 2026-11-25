@@ -1,0 +1,36 @@
+.tool-page-header {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.tool-page-back {
+  margin-inline-start: -8px;
+  padding-inline: 8px;
+  min-height: 44px;
+  color: var(--muted);
+}
+.tool-page-heading {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.tool-page-heading h1 {
+  margin: 0;
+  font-size: clamp(22px, 4vw, 30px);
+  line-height: 1.25;
+}
+.tool-page-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+@media (max-width: 760px) {
+  .tool-page-header { margin-bottom: 14px; }
+}

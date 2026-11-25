@@ -1,0 +1,271 @@
+.recall-page {
+  display: flex;
+  flex-direction: column;
+}
+.recall-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+.recall-controls {
+  display: flex;
+  gap: 14px;
+  margin: 24px 0 16px;
+}
+.recall-controls label {
+  min-width: 145px;
+}
+.recall-interval > span,
+.recall-controls label.recall-mask-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.recall-interval > span {
+  justify-content: space-between;
+}
+.recall-interval output {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.recall-interval input[type="range"] {
+  width: 100%;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent-ink);
+}
+.recall-mask-setting input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  margin: 0;
+}
+.recall-stage {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 390px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+}
+.recall-stage-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.recall-badge {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+.recall-cube {
+  flex: 1;
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+}
+.recall-cube twisty-player {
+  width: min(100%, 500px);
+  height: 100%;
+  min-height: 280px;
+  pointer-events: none;
+}
+.recall-answer {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+  min-height: 50px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.recall-answer strong {
+  color: var(--text);
+}
+.recall-answer span {
+  font-family: var(--mono);
+  line-height: 1.6;
+}
+.recall-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.recall-actions button {
+  min-height: 44px;
+}
+.recall-actions .primary {
+  min-width: 140px;
+}
+.recall-note {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 14px;
+  max-width: 680px;
+}
+.rail nav {
+  gap: 5px;
+}
+@media (max-width: 760px) {
+  .rail nav {
+    width: 80%;
+  }
+  .rail nav a,
+  .rail-bottom > button {
+    min-width: 48px;
+    padding: 6px 5px;
+  }
+  .recall-controls {
+    gap: 8px;
+    margin: 16px 0 12px;
+  }
+  .recall-controls label {
+    min-width: 0;
+    flex: 1;
+    font-size: 10px;
+  }
+  .recall-controls select {
+    font-size: 12px;
+    padding: 8px 4px;
+    width: 100%;
+  }
+  .recall-stage {
+    min-height: 340px;
+    padding: 14px;
+  }
+  .recall-cube,
+  .recall-cube twisty-player {
+    min-height: 230px;
+  }
+  .recall-actions {
+    gap: 6px;
+  }
+  .recall-actions button {
+    flex: 1;
+    min-width: 0;
+    font-size: 10px;
+    padding: 8px 5px;
+  }
+  .recall-actions .primary {
+    min-width: 0;
+  }
+  .recall-note {
+    line-height: 1.7;
+  }
+}
+
+.recall-flat {
+  display: block;
+  width: min(100%, 390px);
+  height: min(100%, 390px);
+  max-height: 44dvh;
+}
+.recall-controls {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .recall-controls label {
+    flex: 1 1 28%;
+  }
+  .recall-flat {
+    width: min(100%, 300px);
+    height: min(100%, 300px);
+    max-height: 38dvh;
+  }
+}
+.recall-player {
+  width: min(100%, 500px);
+  height: 100%;
+  min-height: 280px;
+}
+.recall-player twisty-player {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  pointer-events: none;
+}
+.recall-settings-button {
+  display: none;
+}
+@media (max-width: 760px) {
+  .recall-settings-button {
+    display: inline-flex;
+    min-height: 44px;
+  }
+  .recall-controls-desktop {
+    display: none;
+  }
+  dialog .recall-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+    gap: 16px;
+  }
+  dialog .recall-controls label {
+    min-width: 0;
+    font-size: 12px;
+  }
+  dialog .recall-controls :is(.recall-mask-setting, .recall-interval) {
+    grid-column: 1 / -1;
+  }
+  dialog .recall-controls select {
+    width: 100%;
+    font-size: 16px;
+  }
+}
+@media (max-width: 760px) and (min-height: 560px) {
+  .app:has(.recall-page) {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: calc(59px + env(safe-area-inset-bottom));
+  }
+  .app:has(.recall-page) .app-main {
+    height: 100%;
+  }
+  .app:has(.recall-page) .app-footer {
+    display: none;
+  }
+  .recall-count {
+    display: none;
+  }
+  .recall-stage {
+    min-height: 0;
+    padding: 10px;
+  }
+  .recall-cube,
+  .recall-cube twisty-player,
+  .recall-player,
+  .recall-player twisty-player {
+    min-height: 0;
+  }
+  .recall-cube {
+    min-height: 0;
+  }
+  .recall-player {
+    width: 100%;
+    height: 100%;
+  }
+  .recall-flat {
+    width: min(100%, 420px);
+    height: 100%;
+    max-height: none;
+  }
+  .recall-answer {
+    min-height: 25px;
+    max-height: 20%;
+    overflow: auto;
+  }
+  .recall-actions {
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+  .recall-note {
+    display: none;
+  }
+}
