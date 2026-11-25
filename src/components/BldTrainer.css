@@ -2,12 +2,6 @@
   max-width: 680px;
   margin-inline: auto;
 }
-.bld-page .page-heading {
-  margin: 10px 0 18px;
-  gap: 10px;
-}
-.bld-page .page-heading h1 { text-wrap: balance; }
-.bld-page .page-heading .action-link { flex-shrink: 0; }
 .bld-back { width: fit-content; }
 
 .bld-card {

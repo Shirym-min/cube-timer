@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowLeft, Film, Pause, Play, SkipBack, SkipForward, Undo2 } from "lucide-react";
+import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { Film, Pause, Play, SkipBack, SkipForward, Undo2 } from "lucide-react";
 import { TwistyPlayer } from "cubing/twisty";
 import { scanVideoMotion } from "../lib/scanVideoMotion";
 import {
@@ -20,28 +21,24 @@ const time = (seconds: number | null) => formatTime(seconds === null ? null : Ma
 type Trace = ReturnType<Awaited<ReturnType<typeof createCubeTracker>>["result"]>;
 type Reconstruction = Awaited<ReturnType<typeof reconstructSolve>>;
 
-export function SolveVideo({ onBack }: { onBack: () => void }) {
+export function SolveVideo({ backURL, onBack }: ToolBackLink) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [clip, setClip] = useState<{ name: string; url: string } | null>(null);
   useEffect(() => () => { if (clip) URL.revokeObjectURL(clip.url); }, [clip]);
 
   return (
-    <main id="main-content" tabIndex={-1} className="page-content video-analysis">
-      <header className="video-header">
-        <div>
-          <button className="video-back" onClick={onBack}><ArrowLeft size={15} /> 練習</button>
-          <h1>動画解析</h1>
-        </div>
-        <input
-          hidden ref={fileInput} type="file" accept="video/*,.mov,.mp4"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) setClip({ name: file.name, url: URL.createObjectURL(file) });
-            event.target.value = "";
-          }}
-        />
+    <main id="main-content" tabIndex={-1} className="page-content tool-page video-analysis">
+      <ToolPageHeader title="動画解析" backURL={backURL} onBack={onBack}>
         {clip && <button onClick={() => fileInput.current?.click()}>動画を変更</button>}
-      </header>
+      </ToolPageHeader>
+      <input
+        hidden ref={fileInput} type="file" accept="video/*,.mov,.mp4"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) setClip({ name: file.name, url: URL.createObjectURL(file) });
+          event.target.value = "";
+        }}
+      />
       {clip ? <VideoWorkspace key={clip.url} {...clip} /> : (
         <div className="video-empty">
           <Film size={34} strokeWidth={1.45} aria-hidden="true" />

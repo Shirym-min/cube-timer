@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
 import { Modal } from "./Modal";
 import { RecallCube, recallMasks } from "./RecallCube";
 import { topColors, type TopColor } from "../lib/recallFaces";
@@ -7,7 +8,6 @@ import {
   Play,
   SkipForward,
   Eye,
-  ArrowLeft,
   Settings2,
 } from "lucide-react";
 import existingCases from "../data/recall-cases.json";
@@ -59,7 +59,7 @@ function readSettings(): RecallSettings {
   }
 }
 
-export function RecallTrainer({ onBack }: { onBack: () => void }) {
+export function RecallTrainer({ backURL, onBack }: ToolBackLink) {
   const [settings, setSettings] = useState(readSettings);
   const { set, view, seconds, top, sides, aufEnabled, grayUnneeded } = settings;
   const [auf, setAuf] = useState(""),
@@ -253,27 +253,20 @@ export function RecallTrainer({ onBack }: { onBack: () => void }) {
     </div>
   );
   return (
-    <main id="main-content" tabIndex={-1} className="recall-page">
-      <header className="recall-header">
-        <div>
-          <button className="text-button recall-back" onClick={onBack}>
-            <ArrowLeft size={15} />
-            練習
-          </button>
-          <h1>Recall Trainer</h1>
-        </div>
+    <main id="main-content" tabIndex={-1} className="page-content tool-page recall-page">
+      <ToolPageHeader title="Recall Trainer" backURL={backURL} onBack={onBack}>
         <span className="recall-count">{cases[set].length} ケース</span>
-      </header>
-      <button
-        className="recall-settings-button"
-        onClick={() => {
-          setRunning(false);
-          setSettingsOpen(true);
-        }}
-      >
-        <Settings2 size={17} />
-        練習設定
-      </button>
+        <button
+          className="recall-settings-button"
+          onClick={() => {
+            setRunning(false);
+            setSettingsOpen(true);
+          }}
+        >
+          <Settings2 size={17} aria-hidden="true" />
+          練習設定
+        </button>
+      </ToolPageHeader>
       <div className="recall-controls-desktop">{controls}</div>
       {settingsOpen && (
         <Modal title="練習設定" onClose={() => setSettingsOpen(false)}>

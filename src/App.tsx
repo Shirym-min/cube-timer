@@ -532,7 +532,7 @@ export default function App() {
                         ? "動画解析"
                         : page === "algorithms"
                           ? "アルゴリズム集"
-                          : page === "bld" ? "BLD トレーナー"
+                          : page === "bld" || page === "bld-guide" ? "BLD トレーナー"
                             : page === "virtual" ? "バーチャルキューブ"
                               : "ツール"}
             </span>
@@ -1242,12 +1242,12 @@ export default function App() {
           <Suspense
             fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}
           >
-            <RecallTrainer onBack={() => navigate("practice")} />
+            <RecallTrainer backURL={pageURL("practice")} onBack={(e) => followPage(e, "practice")} />
           </Suspense>
         ) : page === "algorithms" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
             <AlgorithmLibrary
-              practiceURL={pageURL("practice")}
+              backURL={pageURL("practice")}
               onBack={(e) => followPage(e, "practice")}
             />
           </Suspense>
@@ -1259,7 +1259,7 @@ export default function App() {
           </Suspense>
         ) : page === "video" ? (
           <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
-            <SolveVideo onBack={() => navigate("practice")} />
+            <SolveVideo backURL={pageURL("practice")} onBack={(e) => followPage(e, "practice")} />
           </Suspense>
         ) : (
           <main key="sessions" id="main-content" tabIndex={-1} className="page-content">

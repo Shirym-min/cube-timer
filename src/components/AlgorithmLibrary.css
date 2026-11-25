@@ -1,4 +1,3 @@
-.algorithm-library-heading,
 .algorithm-filters,
 .algorithm-browser,
 .algorithm-credit {
@@ -6,14 +5,6 @@
   margin-inline: auto;
 }
 
-.algorithm-library-heading {
-  display: grid;
-  justify-items: start;
-  gap: 9px;
-  margin-bottom: 22px;
-}
-
-.algorithm-library-heading > a,
 .algorithm-source,
 .algorithm-credit a {
   display: inline-flex;
@@ -338,33 +329,6 @@
 }
 
 @media (max-width: 760px) {
-  .page-content.algorithm-library {
-    padding-top: 15px;
-  }
-
-  .algorithm-library-heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 13px;
-  }
-
-  .algorithm-library-heading > a {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 44px;
-    color: var(--text);
-  }
-
-  .algorithm-library-heading > a > span {
-    display: none;
-  }
-
-  .algorithm-library-heading h1 {
-    font-size: 24px;
-  }
-
   .algorithm-filters {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

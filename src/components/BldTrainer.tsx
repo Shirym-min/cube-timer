@@ -1,5 +1,6 @@
-import { useState, type MouseEvent } from "react";
-import { ArrowLeft, BookOpen, Copy, ListOrdered, Repeat2, Settings2 } from "lucide-react";
+import { useState } from "react";
+import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { BookOpen, Copy, ListOrdered, Repeat2, Settings2 } from "lucide-react";
 import {
   BUFFERS, ORBITS, ORBIT_LABELS, bufferLetter, generateBld,
   generateRandomBld, loadBldScramble, memoPreview, normalizeMemo, traceMemoSteps, verifyMemo, type BldOptions, type MemoStep, type Orbit, type PreviewMethod,
@@ -25,10 +26,8 @@ type Exercise = Awaited<ReturnType<typeof generateBld>> & { steps: Record<Orbit,
 type PreviewSource = "answer" | "input";
 type Recall = { phase: "memo"; started: number } | { phase: "recall"; elapsed: number };
 
-export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
+export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: ToolBackLink & {
   openGuide: boolean;
-  backURL: string;
-  onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
   onCloseGuide: () => void;
 }) {
   const [mode, setMode] = useState<"random" | "conditions">("random");
@@ -123,19 +122,13 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="page-content bld-page">
+    <main id="main-content" tabIndex={-1} className="page-content tool-page bld-page">
+      <ToolPageHeader title="BLD トレーナー" backURL={backURL} onBack={onBack}>
+        <button type="button" onClick={() => setPopup("guide")}>
+          <BookOpen size={16} aria-hidden="true" /> ガイド
+        </button>
+      </ToolPageHeader>
       <div className="bld-workspace">
-        <a className="action-link text-button bld-back" href={backURL} onClick={onBack}>
-          <ArrowLeft size={16} aria-hidden="true" /> 練習
-        </a>
-        <header className="page-heading">
-          <h1>BLD トレーナー</h1>
-          <div className="bld-actions">
-            <button type="button" className="text-button" onClick={() => setPopup("guide")}>
-              <BookOpen size={16} aria-hidden="true" /> ガイド
-            </button>
-          </div>
-        </header>
         <div className="bld-card">
           <div className="bld-section bld-solve">
             <div className="bld-heading">

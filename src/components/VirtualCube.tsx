@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
-import { ArrowLeft, RotateCcw, Shuffle } from "lucide-react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
+import { RotateCcw, Shuffle } from "lucide-react";
 import { cube3x3x3 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
 import { TwistyPlayer } from "cubing/twisty";
@@ -38,10 +39,7 @@ const pads = [
 ];
 
 
-export function VirtualCube({ backURL, onBack }: {
-  backURL: string;
-  onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
-}) {
+export function VirtualCube({ backURL, onBack }: ToolBackLink) {
   const host = useRef<HTMLDivElement>(null);
   const controls = useRef<CubeControls>(null);
   const gesture = useRef<Gesture>(null);
@@ -223,26 +221,20 @@ export function VirtualCube({ backURL, onBack }: {
 
   const disabled = !ready || generating;
   return (
-    <main className="page-content virtual-cube-page" id="main-content" tabIndex={-1}>
+    <main className="page-content tool-page virtual-cube-page" id="main-content" tabIndex={-1}>
+      <ToolPageHeader title="バーチャルキューブ" backURL={backURL} onBack={onBack}>
+        <button type="button" disabled={disabled} onClick={() => void scrambleCube()}>
+          <Shuffle size={16} aria-hidden="true" />{generating ? "生成中…" : "スクランブル"}
+        </button>
+        <button type="button" disabled={disabled} onClick={() => {
+          controls.current?.setPosition("");
+          setScramble("");
+          setError("");
+        }}>
+          <RotateCcw size={16} aria-hidden="true" />リセット
+        </button>
+      </ToolPageHeader>
       <div className="virtual-cube-tool">
-        <header className="virtual-cube-heading">
-          <div>
-            <a className="action-link virtual-cube-back" href={backURL} onClick={onBack}><ArrowLeft size={16} />ツール</a>
-            <h1>バーチャルキューブ</h1>
-          </div>
-          <div className="virtual-cube-actions">
-            <button type="button" disabled={disabled} onClick={() => void scrambleCube()}>
-              <Shuffle size={16} aria-hidden="true" />{generating ? "生成中…" : "スクランブル"}
-            </button>
-            <button type="button" disabled={disabled} onClick={() => {
-              controls.current?.setPosition("");
-              setScramble("");
-              setError("");
-            }}>
-              <RotateCcw size={16} aria-hidden="true" />リセット
-            </button>
-          </div>
-        </header>
         {scramble && <p className="virtual-cube-scramble"><code translate="no">{scramble}</code></p>}
         {error && <p role="alert">{error}</p>}
         <div className="virtual-cube-board">

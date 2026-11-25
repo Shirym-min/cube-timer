@@ -1,6 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { ToolPageHeader, type ToolBackLink } from "./ToolPageHeader";
 import { Alg } from "cubing/alg";
-import { ArrowLeft, ArrowUpRight, Check, ChevronRight, Copy, LayoutGrid, List } from "lucide-react";
+import { ArrowUpRight, Check, ChevronRight, Copy, LayoutGrid, List } from "lucide-react";
 import library from "../data/algorithm-library.json";
 import { recallFaces } from "../lib/recallFaces";
 import { harrisBaumCodes, harrisBaumRecognition, harrisBaumStickers, type HarrisBaumCode } from "../lib/zbllRecognition";
@@ -119,11 +120,8 @@ function CaseChoices({
 }
 
 export function AlgorithmLibrary({
-  practiceURL, onBack,
-}: {
-  practiceURL: string;
-  onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
-}) {
+  backURL, onBack,
+}: ToolBackLink) {
   const [set, setSet] = useState<SetName>("PLL");
   const [group, setGroup] = useState("");
   const [query, setQuery] = useState("");
@@ -215,14 +213,8 @@ export function AlgorithmLibrary({
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="page-content algorithm-library">
-      <header className="algorithm-library-heading">
-        <a href={practiceURL} onClick={onBack} aria-label="ツールに戻る">
-          <ArrowLeft size={16} aria-hidden="true" /><span>ツール</span>
-        </a>
-        <h1>アルゴリズム集</h1>
-      </header>
-
+    <main id="main-content" tabIndex={-1} className="page-content tool-page algorithm-library">
+      <ToolPageHeader title="アルゴリズム集" backURL={backURL} onBack={onBack} />
       <div className="algorithm-filters">
         <label>
           セット
