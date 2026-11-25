@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { randomScrambleForEvent } from "cubing/scramble";
 import {
+  ArrowLeft,
   Box,
   Timer,
   ChartNoAxesCombined,
@@ -74,7 +75,7 @@ const AlgorithmLibrary = lazy(() =>
 );
 type ModalKind =
   "settings" | "account" | "manual" | "help" | "newSession" | null;
-const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide", "virtual"] as const;
+const pages = ["timer", "stats", "stats-records", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide", "virtual"] as const;
 type Page = (typeof pages)[number];
 
 function pageFromURL(): Page {
@@ -153,7 +154,7 @@ export default function App() {
   );
   const statsRangeInvalid = !!statsFrom && !!statsTo && statsFrom > statsTo;
   const analysisSolves = useMemo(() => {
-    if (page !== "stats" || (!statsFrom && !statsTo)) return solves;
+    if ((page !== "stats" && page !== "stats-records") || (!statsFrom && !statsTo)) return solves;
     if (statsRangeInvalid) return [];
     const start = statsFrom ? new Date(`${statsFrom}T00:00:00`).getTime() : -Infinity;
     const nextDay = statsTo ? new Date(`${statsTo}T00:00:00`) : null;
@@ -161,6 +162,16 @@ export default function App() {
     const end = nextDay ? nextDay.setDate(nextDay.getDate() + 1) : Infinity;
     return solves.filter(({ createdAt }) => createdAt >= start && createdAt < end);
   }, [page, solves, statsFrom, statsTo, statsRangeInvalid]);
+  const statsRecords = useMemo(() => {
+    if (page !== "stats" && page !== "stats-records") return [];
+    return event === "333mbf" ? [...analysisSolves].sort(compareMultiBlind) : [...analysisSolves].reverse();
+  }, [analysisSolves, event, page]);
+  useEffect(() => {
+    if (page === "stats-records") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      document.getElementById("main-content")?.focus();
+    }
+  }, [page]);
   const timed = !["333fm", "333mbf"].includes(event),
     latest = solves.at(-1),
     precision = store.settings.precision;
@@ -416,6 +427,24 @@ export default function App() {
         !search ||
         `${index} ${formatResult(s, precision)} ${s.comment}`.includes(search),
     );
+  function renderStatsRecords(items: Solve[], className: string) {
+    if (!items.length) return (
+      <p className="muted">{statsFrom || statsTo ? "指定期間の記録はありません。" : "まだ記録がありません。"}</p>
+    );
+    return (
+      <div className={className}>
+        {items.map((solve) => (
+          <button type="button" key={solve.id} onClick={() => setEditing(solve)}>
+            <span>{new Date(solve.createdAt).toLocaleDateString("ja-JP")}</span>
+            <strong>{formatResult(solve, precision)}</strong>
+            {event === "333mbf" && <span>{2 * (solve.solved ?? 0) - (solve.attempted ?? 0)}点</span>}
+            {solve.comment && <span>{solve.comment}</span>}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div
       className={`app ${focus ? "focus-mode" : ""} ${timer.phase === "running" ? "is-running" : ""}`}
@@ -456,12 +485,12 @@ export default function App() {
               aria-label={label}
               title={label}
               aria-current={
-                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
+                page === key || (key === "stats" && page === "stats-records") || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
                   ? "page"
                   : undefined
               }
               className={
-                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
+                page === key || (key === "stats" && page === "stats-records") || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
                   ? "active"
                   : ""
               }
@@ -493,8 +522,8 @@ export default function App() {
             <span>
               {page === "timer"
                 ? "タイマー"
-                : page === "stats"
-                  ? "統計"
+                : page === "stats" || page === "stats-records"
+                  ? page === "stats" ? "統計" : "統計の記録"
                   : page === "sessions"
                     ? "セッション"
                     : page === "recall"
@@ -1093,65 +1122,62 @@ export default function App() {
             )}
             <div className="panel-heading">
               <h2>記録</h2>
-              <button
-                onClick={() => {
-                  const rows = [
-                    [
-                      "date",
-                      "event",
-                      "time_ms",
-                      "penalty",
-                      "moves",
-                      "solved",
-                      "attempted",
-                      "scramble",
-                      "comment",
-                    ],
-                    ...analysisSolves.map((s) => [
-                      new Date(s.createdAt).toISOString(),
-                      s.event,
-                      s.ms,
-                      s.penalty,
-                      s.moves ?? "",
-                      s.solved ?? "",
-                      s.attempted ?? "",
-                      s.scramble,
-                      s.comment,
-                    ]),
-                  ];
-                  download(
-                    "split-records.csv",
-                    "\ufeff" +
-                      rows.map((row) => row.map(csvCell).join(",")).join("\n"),
-                    "text/csv;charset=utf-8",
-                  );
-                }}
-              >
-                <Download size={16} />
-                CSV
-              </button>
-            </div>
-            <div className="full-records">
-              {(event === "333mbf"
-                ? [...analysisSolves].sort(compareMultiBlind)
-                : [...analysisSolves].reverse()
-              ).map((s) => (
-                <button key={s.id} onClick={() => setEditing(s)}>
-                  <span>
-                    {new Date(s.createdAt).toLocaleDateString("ja-JP")}
-                  </span>
-                  <strong>{formatResult(s, precision)}</strong>
-                  {event === "333mbf" && (
-                    <span>{2 * (s.solved ?? 0) - (s.attempted ?? 0)}点</span>
-                  )}
-                  <span>{s.comment}</span>
-                  <ChevronRight size={16} />
+              <div className="stats-record-actions">
+                <button type="button" onClick={() => navigate("stats-records")}>すべての記録を見る</button>
+                <button
+                  onClick={() => {
+                    const rows = [
+                      [
+                        "date",
+                        "event",
+                        "time_ms",
+                        "penalty",
+                        "moves",
+                        "solved",
+                        "attempted",
+                        "scramble",
+                        "comment",
+                      ],
+                      ...analysisSolves.map((s) => [
+                        new Date(s.createdAt).toISOString(),
+                        s.event,
+                        s.ms,
+                        s.penalty,
+                        s.moves ?? "",
+                        s.solved ?? "",
+                        s.attempted ?? "",
+                        s.scramble,
+                        s.comment,
+                      ]),
+                    ];
+                    download(
+                      "split-records.csv",
+                      "\ufeff" +
+                        rows.map((row) => row.map(csvCell).join(",")).join("\n"),
+                      "text/csv;charset=utf-8",
+                    );
+                  }}
+                >
+                  <Download size={16} />
+                  CSV
                 </button>
-              ))}
-              {!analysisSolves.length && (
-                <p className="muted">{statsFrom || statsTo ? "指定期間の記録はありません。" : "まだ記録がありません。"}</p>
-              )}
+              </div>
             </div>
+            {renderStatsRecords(statsRecords.slice(0, 3), "stats-record-preview")}
+          </main>
+        ) : page === "stats-records" ? (
+          <main key="stats-records" id="main-content" tabIndex={-1} className="page-content">
+            <header className="page-heading">
+              <div>
+                <a className="action-link stats-record-back" href={pageURL("stats")} onClick={(e) => followPage(e, "stats")}>
+                  <ArrowLeft size={16} aria-hidden="true" />統計に戻る
+                </a>
+                <h1>すべての記録</h1>
+                <p className="muted">{session?.name} · {statsRecords.length}件</p>
+                {(statsFrom || statsTo) && <p className="muted">{statsFrom || "開始日なし"} ～ {statsTo || "終了日なし"}</p>}
+              </div>
+            </header>
+            {renderStatsRecords(statsRecords, "stats-record-grid")}
           </main>
         ) : page === "practice" ? (
           <main key="practice" id="main-content" tabIndex={-1} className="page-content practice-page">

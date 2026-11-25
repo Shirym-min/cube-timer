@@ -97,9 +97,10 @@
 .virtual-cube-keyboard dd { margin: 0; }
 @media (orientation: landscape) {
   .virtual-cube-board {
-    grid-template-columns: minmax(114px, 1fr) minmax(118px, 2.5fr) minmax(114px, 1fr);
+    grid-template-columns: minmax(150px, 1fr) minmax(118px, 2.5fr) minmax(150px, 1fr);
     grid-template-areas: "left cube right";
   }
+  .virtual-cube-pad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (orientation: landscape) and (max-height: 540px) {
   .virtual-cube-tool { gap: 8px; }

@@ -23,20 +23,20 @@ type Gesture = {
 };
 
 const initialView = { latitude: 35, longitude: 30 };
-// The first row puts the index-finger U flick and the common R/F turns
-// nearest the thumbs. Each hand gets the complementary turn directions.
+// Keep R/R′ on the right and L/L′ on the left, including their wide turns.
 const pads = [
   [
-    ["R'", "F'", "U'"], ["L", "B'", "D"],
-    ["Lw", "Fw'", "Uw'"], ["Rw'", "Bw'", "Dw"],
-    ["M'", "E", "S'"], ["x'", "y'", "z'"],
+    "L", "L'", "U'", "F'", "D", "D'", "B", "B'",
+    "Lw", "Lw'", "Uw'", "Fw'", "Dw", "Dw'", "Bw", "Bw'",
+    "M'", "E", "S'", "x'", "y'", "z'",
   ],
   [
-    ["U", "F", "R"], ["D'", "B", "L'"],
-    ["Uw", "Fw", "Rw"], ["Dw'", "Bw", "Lw'"],
-    ["M", "E'", "S"], ["x", "y", "z"],
+    "U", "R", "R'", "F", "D", "D'", "B", "B'",
+    "Uw", "Rw", "Rw'", "Fw", "Dw", "Dw'", "Bw", "Bw'",
+    "M", "E'", "S", "x", "y", "z",
   ],
 ];
+
 
 export function VirtualCube({ backURL, onBack }: {
   backURL: string;
@@ -252,16 +252,16 @@ export function VirtualCube({ backURL, onBack }: {
               onLostPointerCapture={() => { gesture.current = null; }} />
             {!ready && !error && <p className="virtual-cube-loading" role="status">読み込み中…</p>}
           </div>
-          {pads.map((rows, index) => (
-            <div key={rows[0][0]} className={`virtual-cube-pad ${index === 0 ? "pad-left" : "pad-right"}`}
+          {pads.map((moves, index) => (
+            <div key={moves[0]} className={`virtual-cube-pad ${index === 0 ? "pad-left" : "pad-right"}`}
               role="group" aria-label={index === 0 ? "左手の回転ボタン" : "右手の回転ボタン"}>
-              {rows.flatMap((row, rowIndex) => row.map((move) => (
+              {moves.map((move, moveIndex) => (
                 <button key={move} type="button" disabled={disabled}
-                  className={rowIndex === 0 ? "virtual-cube-primary-turn" : undefined}
+                  className={moveIndex < 4 ? "virtual-cube-primary-turn" : undefined}
                   onClick={() => controls.current?.turn(viewedCubeMove(move, view.current.latitude, view.current.longitude))}>
                   {move.replace("'", "′")}
                 </button>
-              )))}
+              ))}
             </div>
           ))}
         </div>

@@ -930,37 +930,6 @@ kbd {
 .statistics-table tbody td:last-child {
   color: var(--accent-ink);
 }
-.full-records {
-  display: grid;
-}
-.full-records > button {
-  display: flex;
-  justify-content: flex-start;
-  padding: 15px 5px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  min-width: 0;
-  white-space: normal;
-}
-.full-records > button > span:first-child {
-  font-size: 11px;
-  color: var(--muted);
-  min-width: 85px;
-}
-.full-records > button > strong {
-  font-family: var(--mono);
-  min-width: 100px;
-  text-align: left;
-}
-.full-records > button > span:nth-last-child(2) {
-  color: var(--muted);
-  font-size: 11px;
-  flex: 1;
-  text-align: left;
-  overflow-wrap: anywhere;
-}
 .session-list {
   display: grid;
   gap: 15px;
@@ -1417,7 +1386,7 @@ dialog::backdrop {
 @media (max-width: 760px) {
   .app {
     display: block;
-    padding-bottom: 64px;
+    padding-bottom: calc(59px + env(safe-area-inset-bottom));
   }
   .rail {
     position: fixed;
@@ -1674,14 +1643,6 @@ dialog::backdrop {
   }
   .session-row-actions {
     gap: 8px;
-  }
-  .full-records > button > strong {
-    min-width: 90px;
-    font-size: 11px;
-  }
-  .full-records > button > span:first-child {
-    min-width: 70px;
-    font-size: 9px;
   }
   dialog {
     width: calc(100% - 24px);
@@ -2901,37 +2862,29 @@ dialog[open][data-closing]::backdrop {
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
   .app,
   .app:has(.mobile-timer) {
-    display: grid;
-    grid-template-columns: calc(58px + env(safe-area-inset-left)) minmax(0, 1fr);
-    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) 0;
+    display: block;
+    padding: 0 env(safe-area-inset-right) calc(50px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
     height: auto;
     min-height: 100dvh;
     overflow: visible;
   }
   .app .rail {
-    position: sticky;
-    inset: 0 auto auto;
-    width: auto;
-    height: 100dvh;
-    padding: 6px 4px env(safe-area-inset-bottom) calc(4px + env(safe-area-inset-left));
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    border-top: 0;
-    border-right: 1px solid var(--line);
-  }
-  .app .rail .brand, .app .rail-caption, .app .rail nav a span,
-  .app .rail-bottom > button span, .app .rail nav kbd { display: none; }
-  .app .rail nav { display: grid; width: 100%; gap: 3px; }
-  .app .rail nav a, .app .rail-bottom > button {
-    min-width: 0;
-    min-height: 40px;
-    height: 40px;
+    position: fixed;
+    inset: auto 0 0;
+    height: calc(50px + env(safe-area-inset-bottom));
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     width: 100%;
-    padding: 4px;
+    z-index: 5;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
   }
-  .app .rail-bottom { margin-top: auto; }
+  .app .rail .brand, .app .rail-caption, .app .rail nav kbd, .app .rail-bottom { display: none; }
+  .app .rail nav { display: flex; width: min(100%, 520px); justify-content: space-evenly; }
+  .app .rail nav a { height: 44px; padding: 4px 12px; }
+  .app .rail nav a.active:before { display: none; }
   .app .topbar { height: 40px; padding: 0 12px; }
   .app:has(.mobile-timer) .app-main { height: auto; }
   .timer-layout .timer-workspace { min-width: 0; padding: 8px 12px; }
@@ -2945,4 +2898,58 @@ dialog[open][data-closing]::backdrop {
   .timer-layout .records-pane { min-width: 0; }
   .timer-layout .session-toolbar { height: auto; min-height: 44px; }
   .page-content { padding: 12px; }
+}
+
+.stats-record-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.stats-record-preview, .stats-record-grid { display: grid; gap: 8px; }
+.stats-record-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stats-record-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+:is(.stats-record-preview, .stats-record-grid) > button {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  min-width: 0;
+  text-align: left;
+  padding: 10px;
+  gap: 3px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.stats-record-preview, .stats-record-grid) strong { font-family: var(--mono); }
+:is(.stats-record-preview, .stats-record-grid) span { color: var(--muted); font-size: 11px; }
+.stats-record-preview > button > span:not(:first-child) { display: none; }
+.stats-record-back { padding-inline: 0; color: var(--muted); }
+
+dialog.modal-sheet {
+  inset: auto 0 0;
+  margin: 0 auto;
+  border-radius: 18px 18px 0 0;
+}
+dialog.modal-sheet .modal-header { touch-action: none; padding-top: 22px; }
+dialog.modal-sheet .modal-header::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: calc(50% - 16px);
+  width: 32px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+dialog.modal-sheet .modal-body { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+dialog.modal-sheet[open] { transform: translateY(var(--sheet-drag, 0px)); }
+dialog.modal-sheet[open][data-dragging] { transition: none; }
+@media (prefers-reduced-motion: no-preference) {
+  dialog.modal-sheet[open][data-closing] { transform: translateY(100%); }
+  @starting-style {
+    dialog.modal-sheet[open] { transform: translateY(100%); }
+  }
+}
+@media (max-width: 760px), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  dialog.modal-sheet, dialog.modal-sheet.wide { width: 100%; max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); }
+  .app.is-running:not(.focus-mode) .rail {
+    opacity: 1;
+    visibility: visible;
+    transition: none;
+  }
 }
