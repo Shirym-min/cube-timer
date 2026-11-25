@@ -215,6 +215,14 @@ export function Settings({
           Safariの共有メニューから「ホーム画面に追加」を選択してください。一度オンラインで開くと、オフラインでも計測できます。
         </p>
       </section>
+      <br />
+      <br />
+      <br />
+      <section className="privacy">
+        <a className="privacy-link" href={`${import.meta.env.BASE_URL}privacy.html`}>
+          プライバシーポリシー
+        </a>
+      </section>
     </>
   );
 }
