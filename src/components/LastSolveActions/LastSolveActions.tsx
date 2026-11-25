@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
-import { ChevronUp, MoreHorizontal } from "lucide-react";
+import { ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { formatResult, type Settings, type Solve } from "../../lib/model";
 
 type Props = {
@@ -149,7 +149,7 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
           <ChevronUp size={20} aria-hidden="true" />
         </button>
         <div className="last-actions" id={actionsId}>
-          <span>直前 {formatResult(solve, precision)}</span>
+          <span><span className="sr-only">直前の記録 </span>{formatResult(solve, precision)}</span>
           {confirm ? (
             <>
               <button type="button" disabled={deleting} onClick={() => setConfirm(false)}>
@@ -193,11 +193,12 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
               >
                 DNF <kbd className="shortcut-hint" aria-hidden="true">D</kbd>
               </button>
-              <button type="button" aria-label="直前の記録を編集" onClick={() => edit(solve)}>
-                <MoreHorizontal size={16} />
+              <button type="button" aria-label="直前の記録を編集" title="直前の記録を編集" onClick={() => edit(solve)}>
+                <Pencil size={16} aria-hidden="true" />
               </button>
-              <button type="button" className="last-solve-delete danger" onClick={() => setConfirm(true)}>
-                削除
+              <button type="button" className="last-solve-delete danger" aria-label="削除" title="削除"
+                onClick={() => setConfirm(true)}>
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             </>
           )}

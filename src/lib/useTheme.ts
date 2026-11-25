@@ -16,6 +16,10 @@ export function useTheme(settings: Settings) {
       );
       el.style.setProperty("--accent-ink", colors.ink);
       el.style.setProperty("--accent-foreground", colors.foreground);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        "content",
+        getComputedStyle(el).getPropertyValue("--surface").trim(),
+      );
     };
     apply();
     media.addEventListener("change", apply);

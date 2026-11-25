@@ -4,7 +4,7 @@
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   touch-action: pan-x pan-y;
   color: #202b40;
-  background: #f5f7fb;
+  background: var(--surface);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --bg: #f5f7fb;

@@ -11,21 +11,25 @@
 @media (max-width: 760px) {
   .mobile-timer .manual-stage {
     min-height: 0;
-    padding: 42px 0 12px;
+    padding: 56px 0 12px;
     align-items: start;
   }
 }
 
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
-  .app,
-  .app:has(.mobile-timer) {
-    display: block;
-    padding: 0 env(safe-area-inset-right) calc(50px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
+  .timer-layout .manual-stage {
+    min-height: 0;
+    padding: 4px 0;
+    justify-content: flex-start;
   }
-  .app:has(.mobile-timer) .app-main { height: auto; }
-  .timer-layout .timer-stage:has(.last-solve-tray) { padding-bottom: 32px; }
-  .timer-layout .trend-panel, .app .app-footer { display: none; }
+  .manual-stage .timer-tools {
+    position: static;
+    align-self: flex-end;
+  }
+  .manual-form {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline: 4px;
+  }
 }

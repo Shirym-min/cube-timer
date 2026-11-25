@@ -1,4 +1,4 @@
-import { ArrowUpRight, Box } from "lucide-react";
+import { Box, ChartNoAxesCombined, ListOrdered, Timer } from "lucide-react";
 import { Chart } from "../../components/Chart/Chart";
 import { SolveForm } from "../../components/SolveForm/SolveForm";
 import { TimerStage } from "../../components/TimerStage/TimerStage";
@@ -51,19 +51,24 @@ export function TimerPage({
     <>
       <div className="mobile-tabs">
         <button
+          aria-label="計測"
+          title="計測"
           aria-pressed={mobileTab === "timer"}
           className={mobileTab === "timer" ? "selected" : ""}
           onClick={() => setMobileTab("timer")}
         >
-          計測
+          <Timer size={19} aria-hidden="true" />
         </button>
         <button
+          aria-label={`記録 ${solves.length}件`}
+          title="記録"
           disabled={locked}
           aria-pressed={mobileTab === "records"}
           className={mobileTab === "records" ? "selected" : ""}
           onClick={() => setMobileTab("records")}
         >
-          記録 <span>{solves.length}</span>
+          <ListOrdered size={19} aria-hidden="true" />
+          <span aria-hidden="true">{solves.length}</span>
         </button>
         <div className="event-selector mobile-event-selector">
           <Box size={17} aria-hidden="true" />
@@ -84,8 +89,9 @@ export function TimerPage({
           {manualMode ? (
             <section className="timer-stage manual-stage" aria-label="手入力">
               <div className="timer-tools">
-                <button type="button" className="text-button" onClick={() => setManualMode(false)}>
-                  タイマー
+                <button type="button" className="icon-button timer-mode-button" aria-label="タイマーに戻る"
+                  title="タイマーに戻る" onClick={() => setManualMode(false)}>
+                  <Timer size={19} aria-hidden="true" />
                 </button>
               </div>
               <div className="manual-form">
@@ -159,10 +165,12 @@ export function TimerPage({
               <a
                 className="action-link text-button"
                 href={locked ? undefined : pageURL("stats")}
+                aria-label="統計"
                 aria-disabled={locked || undefined}
+                title="統計"
                 onClick={(e) => followPage(e, "stats")}
               >
-                統計 <ArrowUpRight size={14} />
+                <ChartNoAxesCombined size={18} aria-hidden="true" />
               </a>
             </div>
             {timed ? (

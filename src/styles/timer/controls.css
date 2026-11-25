@@ -110,6 +110,10 @@
   .focus-mode .mobile-timer .mobile-quick-stats { display: none; }
 }
 
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .mobile-timer .mobile-quick-stats { display: none; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .scramble-row[data-direction="previous"] .scramble-outgoing {
     transform: perspective(480px) translateX(24px) translateZ(-42px) rotateY(20deg);

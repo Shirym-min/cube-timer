@@ -1,4 +1,4 @@
-import { Plus, Timer, Trophy } from "lucide-react";
+import { Keyboard, Plus, Timer, Trophy } from "lucide-react";
 import { average, effective, formatResult, formatTime, type Session, type Solve } from "../../lib/model";
 
 export function RecordsPane({
@@ -49,6 +49,7 @@ export function RecordsPane({
         <button
           className="icon-button"
           aria-label="新しいセッション"
+          title="新しいセッション"
           disabled={locked}
           onClick={openNewSession}
         >
@@ -62,10 +63,11 @@ export function RecordsPane({
         <button
           className="icon-button"
           aria-label="タイムを手入力"
+          title="タイムを手入力"
           disabled={locked || scrambleBusy}
           onClick={openManual}
         >
-          <Plus size={18} />
+          <Keyboard size={18} aria-hidden="true" />
         </button>
       </div>
       {solves.length > 10 && (
@@ -131,15 +133,6 @@ export function RecordsPane({
                 ? "該当する記録がありません"
                 : "まだ記録がありません"}
             </p>
-            {!search && (
-              <button
-                className="text-button"
-                disabled={locked || scrambleBusy}
-                onClick={openManual}
-              >
-                タイムを入力する <Plus size={13} />
-              </button>
-            )}
           </div>
         )}
       </div>

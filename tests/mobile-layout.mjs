@@ -10,7 +10,7 @@ for(const viewport of [{width:390,height:844},{width:375,height:667},{width:320,
  await page.screenshot({path:`docs/screenshots/mobile-timer-${viewport.width}.png`});
  await page.locator('.diagram twisty-player').waitFor();await page.getByRole('button',{name:'ヒント',exact:true}).click();await page.locator('.hint-result').waitFor({timeout:30000});
  await page.getByRole('button',{name:'ヒントを閉じる'}).click();
- await page.getByLabel('種目',{exact:true}).selectOption('777');await page.waitForTimeout(200);await page.waitForFunction(()=>!document.querySelector('.scramble-text.loading'),null,{timeout:90000});
+ await page.getByRole('combobox',{name:'種目',exact:true}).selectOption('777');await page.waitForTimeout(200);await page.waitForFunction(()=>!document.querySelector('.scramble-text.loading'),null,{timeout:90000});
  if(viewport.height>=650) assert.ok(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),'long scramble must not expand page');
  const scramble=page.locator('.scramble-text');assert.ok(await scramble.evaluate(e=>e.scrollHeight>e.clientHeight),'long scramble remains scrollable');
  await page.close();

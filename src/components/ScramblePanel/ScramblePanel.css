@@ -261,9 +261,77 @@
   .mobile-timer .scramble-main { transition: height 240ms var(--ease-settle); }
 }
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
-  .scramble-main { height: 100px !important; overflow: hidden; }
-  .scramble-content { display: flex; flex-direction: column; max-height: 100px; }
-  .scramble-row, .scramble-viewport { min-height: 0; }
-  .scramble-viewport { grid-template-rows: minmax(0, 1fr); align-items: stretch; }
-  .scramble-text { min-height: 0; max-height: 100px; overflow-y: auto; }
+  .timer-layout .scramble-panel {
+    --scramble-row-height: clamp(44px, 15dvh, 64px);
+    display: grid;
+    align-items: stretch;
+    gap: 4px;
+    padding: 0 3px 3px;
+  }
+  .timer-layout .scramble-panel:has(.diagram-panel) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(62px, 11vw, 88px);
+  }
+  .timer-layout .scramble-main {
+    grid-area: auto;
+    align-self: stretch;
+    height: auto !important;
+    max-height: none;
+    border: 0;
+    padding: 0;
+  }
+  .timer-layout .scramble-content {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    max-height: none;
+  }
+  .timer-layout .scramble-toolbar {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    margin: 0 0 0 10px;
+  }
+  .scramble-toolbar .event-selector { min-width: 0; }
+  .scramble-toolbar .event-selector select {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 4px;
+    font-size: 16px;
+    text-overflow: ellipsis;
+  }
+  .timer-layout .scramble-row {
+    flex: 0 0 100%;
+    height: var(--scramble-row-height);
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+  .timer-layout .scramble-arrow { width: 44px; height: 44px; }
+  .timer-layout .scramble-viewport {
+    overflow: clip;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .timer-layout .scramble-text {
+    min-height: 0;
+    max-height: var(--scramble-row-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    font-size: 16px;
+  }
+  .timer-layout .diagram-panel {
+    grid-area: auto;
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--scramble-row-height) 44px;
+    align-content: end;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-inline-start: 1px solid var(--line);
+  }
+  .timer-layout .diagram-panel .panel-heading {
+    grid-area: 2 / 1;
+    justify-content: center;
+  }
 }

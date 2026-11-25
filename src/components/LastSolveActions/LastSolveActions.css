@@ -95,3 +95,23 @@
 @media (prefers-reduced-motion: reduce) {
   .last-solve-sheet, .last-solve-sheet .last-actions { transition: none; }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .last-solve-tray { position: static; overflow: visible; pointer-events: auto; }
+  .last-solve-sheet { transform: none; transition: none; }
+  .last-solve-sheet .last-solve-handle, .last-actions > span { display: none; }
+  .last-solve-sheet .last-actions {
+    visibility: visible;
+    margin: 0;
+    padding: 0;
+    height: 44px;
+    background: transparent;
+    border: 0;
+    pointer-events: auto;
+  }
+  .last-solve-sheet .last-actions button {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

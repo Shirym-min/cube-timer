@@ -135,11 +135,6 @@
 .empty-records p {
   font-size: 11px;
 }
-.empty-records .text-button {
-  color: var(--accent-ink);
-  font-size: 10px;
-}
-
 @media (hover: hover) and (pointer: fine) {
   .records-table tbody tr:hover {
     background: var(--subtle);
@@ -162,6 +157,10 @@
 }
 
 @media (max-width: 760px) {
+  .records-pane .icon-button {
+    width: 44px;
+    height: 44px;
+  }
   .records-pane {
     border: 0;
     min-height: calc(100dvh - 200px);
@@ -186,6 +185,22 @@
 }
 
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
-  .timer-layout .records-pane { min-width: 0; }
-  .timer-layout .session-toolbar { height: auto; min-height: 44px; }
+  .timer-layout .records-pane {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    border-inline-start: 1px solid var(--line);
+  }
+  .focus-mode .timer-layout .records-pane { display: none; }
+  .timer-layout :is(.session-toolbar, .records-heading) { padding: 2px 6px; min-height: 48px; }
+  .timer-layout .session-toolbar { height: auto; }
+  .timer-layout .session-toolbar select { height: 44px; min-height: 44px; font-size: 16px; padding: 0 4px; }
+  .timer-layout .records-heading h2 { padding-inline-start: 6px; }
+  .timer-layout .records-pane .icon-button { width: 44px; height: 44px; flex-shrink: 0; }
+  .timer-layout .record-search { min-height: 34px; margin: 0 6px 4px; width: auto; padding: 4px; font-size: 16px; }
+  .timer-layout .records-scroll { min-height: 0; overscroll-behavior: contain; }
+  .timer-layout .records-table :is(th, td) { padding: 4px 6px; }
+  .timer-layout .records-table :is(th, td):first-child { width: auto; }
+  .timer-layout .records-table td button { min-height: 44px; font-size: 12px; }
+  .timer-layout .empty-records { min-height: 100%; padding: 6px; text-align: center; }
 }

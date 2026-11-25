@@ -129,5 +129,6 @@
 }
 
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .mobile-tabs { display: none; }
   .page-content { padding: 12px; }
 }

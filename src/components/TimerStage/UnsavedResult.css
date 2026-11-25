@@ -19,3 +19,8 @@
     z-index: 1;
   }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .unsaved { display: flex; align-items: center; gap: 6px; margin: 0; text-align: left; }
+  .unsaved button { min-height: 44px; margin: 0; }
+}

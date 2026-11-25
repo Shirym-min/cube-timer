@@ -47,7 +47,7 @@ await page.waitForFunction(
 );
 assert.equal(await page.locator(".records-table tbody tr").count(), 0);
 await page
-  .getByLabel("セッション", { exact: true })
+  .getByRole("combobox", { name: "セッション", exact: true })
   .selectOption({ label: "メインセッション" });
 await page.waitForFunction(
   () => document.querySelectorAll(".records-table tbody tr").length === 2,
@@ -113,7 +113,7 @@ await page.waitForFunction(
 );
 await page.getByRole("button", { name: "閉じる", exact: true }).click();
 await page.screenshot({ path: "docs/screenshots/mobile.png", fullPage: true });
-await page.getByRole("button", { name: /^記録 13$/ }).click();
+await page.getByRole("button", { name: "記録 13件", exact: true }).click();
 await page.screenshot({
   path: "docs/screenshots/mobile-records.png",
   fullPage: true,

@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
         short_name: "SPLIT",
         description: "キューブの計測と練習記録",
         lang: "ja",
-        theme_color: "#2459e0",
+        theme_color: "#ffffff",
         background_color: "#f5f7fb",
         display: "standalone",
         start_url: ".",

@@ -220,22 +220,30 @@
 
 @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
   .app .rail {
-    position: fixed;
-    inset: auto 0 0;
-    height: calc(50px + env(safe-area-inset-bottom));
-    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    width: 100%;
-    z-index: 5;
-    border-right: 0;
-    border-top: 1px solid var(--line);
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    position: static;
+    width: calc(53px + env(safe-area-inset-left));
+    height: 100%;
+    padding: max(4px, env(safe-area-inset-top)) 4px max(4px, env(safe-area-inset-bottom))
+      calc(4px + env(safe-area-inset-left));
+    border: 0;
+    border-right: 1px solid var(--line);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
   }
-  .app .rail .brand, .app .rail-caption, .app .rail nav kbd, .app .rail-bottom { display: none; }
-  .app .rail nav { display: flex; width: min(100%, 520px); justify-content: space-evenly; }
-  .app .rail nav a { height: 44px; padding: 4px 12px; }
-  .app .rail nav a.active:before { display: none; }
+  .app .rail :is(.brand, .rail-caption, .nav-shortcut, .rail-bottom > button:first-child) { display: none; }
+  .app .rail nav { display: grid; width: auto; gap: 2px; }
+  .app .rail :is(nav a, .rail-bottom > button) {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+  }
+  .app .rail nav a.active:before { display: block; left: -4px; }
+  .app .rail-bottom { display: grid; padding: 0; }
+  .app.focus-mode .rail { display: none; }
 }
 
 @media (max-width: 760px), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {

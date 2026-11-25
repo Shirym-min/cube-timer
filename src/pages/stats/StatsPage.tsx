@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { ChevronRight, Download } from "lucide-react";
 import { Chart } from "../../components/Chart/Chart";
 import { TimeDistribution } from "../../components/TimeDistribution/TimeDistribution";
 import { csvCell, download } from "../../lib/import";
@@ -194,7 +194,10 @@ export function StatsPage({
       <div className="panel-heading">
         <h2>記録</h2>
         <div className="stats-record-actions">
-          <button type="button" onClick={showRecords}>すべての記録を見る</button>
+          <button type="button" className="icon-button" aria-label="すべての記録を見る"
+            title="すべての記録を見る" onClick={showRecords}>
+            <ChevronRight size={19} aria-hidden="true" />
+          </button>
           <button onClick={exportCSV}>
             <Download size={16} />
             CSV

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
-import { Maximize2, X } from "lucide-react";
+import { Keyboard, Maximize2, Minimize2 } from "lucide-react";
 import { LastSolveActions } from "../LastSolveActions/LastSolveActions";
 import { useTimer, type Phase } from "../../lib/useTimer";
 import {
@@ -58,17 +58,18 @@ export function TimerStage({
   );
   const touchRef = useRef<HTMLDivElement>(null);
   const surfacePress = useRef<{ id: number; x: number; y: number } | null>(null);
+  const [stopPointer, setStopPointer] = useState<number | null>(null);
   const running = timer.phase === "running";
+  const stopSurface = running || stopPointer !== null;
   useLayoutEffect(() => {
     const element = touchRef.current;
-    if (!element || (timer.phase !== "running" && !timer.inspecting)) return;
+    const readout = element?.parentElement;
+    if (!element || !readout || (timer.phase !== "running" && !timer.inspecting)) return;
     const position = () => {
-      const rect = element.getBoundingClientRect();
-      const transform = new DOMMatrixReadOnly(getComputedStyle(element).transform);
-      const centerX = rect.left + rect.width / 2 - transform.m41;
-      const centerY = rect.top + rect.height / 2 - transform.m42;
-      element.style.setProperty('--timer-shift-x', `${innerWidth / 2 - centerX}px`);
-      element.style.setProperty('--timer-shift-y', `${innerHeight / 2 - centerY}px`);
+      const rect = readout.getBoundingClientRect();
+      const fixed = getComputedStyle(readout).position === "fixed";
+      element.style.setProperty("--timer-shift-x", `${fixed ? 0 : (innerWidth - rect.width) / 2 - rect.left}px`);
+      element.style.setProperty("--timer-shift-y", `${fixed ? 0 : (innerHeight - rect.height) / 2 - rect.top}px`);
     };
     position();
     window.addEventListener('resize', position);
@@ -145,23 +146,47 @@ export function TimerStage({
   return (
     <>
       <section className={`timer-stage ${timer.phase} ${timer.inspecting ? "inspecting" : ""}`} aria-label="タイマー">
-        {(enabled || running) && (
+        {(enabled || stopSurface) && (
           <div
-            className={running ? "timer-stop-surface" : "timer-start-surface"}
+            className={stopSurface ? "timer-stop-surface" : "timer-start-surface"}
             aria-hidden="true"
             {...gestures}
+            onPointerDown={(e) => {
+              press(e);
+              if (running && surfacePress.current?.id === e.pointerId) {
+                setStopPointer(e.pointerId);
+              }
+            }}
+            onPointerUp={(e) => {
+              release(e);
+              if (stopPointer === e.pointerId) {
+                // Keep the tap on the stop surface until its click has been dispatched.
+                requestAnimationFrame(() => setStopPointer(null));
+              }
+            }}
+            onPointerCancel={(e) => {
+              cancelPress(e);
+              if (stopPointer === e.pointerId) setStopPointer(null);
+            }}
+            onLostPointerCapture={(e) => {
+              cancelPress(e);
+              if (stopPointer === e.pointerId) requestAnimationFrame(() => setStopPointer(null));
+            }}
           />
         )}
         <div className="timer-tools">
-          <button type="button" className="text-button" onClick={manualMode} disabled={!enabled || timer.active}>
-            手入力
+          <button type="button" className="icon-button timer-mode-button" aria-label="手入力" title="手入力"
+            onClick={manualMode} disabled={!enabled || timer.active}>
+            <Keyboard size={19} aria-hidden="true" />
           </button>
           <button
             className="icon-button"
             aria-label="集中表示"
+            aria-pressed={focus}
+            title={focus ? "集中表示を終了" : "集中表示"}
             onClick={() => setFocus(!focus)}
           >
-            {focus ? <X size={18} /> : <Maximize2 size={18} />}
+            {focus ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
         </div>
         <div className="timer-readout">
@@ -199,39 +224,41 @@ export function TimerStage({
             区間 {timer.parts.length + 1} / {settings.phases}
           </span>
         )}
-        {pending && timed && (
-          <div className="unsaved" role="status">
-            記録を保存中です。保存に失敗した場合は再試行してください。
-            <button onClick={() => void retry().catch(() => {})}>再保存</button>
+        <div className="timer-details">
+          {pending && timed && (
+            <div className="unsaved" role="status">
+              記録を保存中です。保存に失敗した場合は再試行してください。
+              <button onClick={() => void retry().catch(() => {})}>再保存</button>
+            </div>
+          )}
+          {latest && !timer.active && !pending && (
+            <LastSolveActions
+              key={latest.id}
+              solve={latest}
+              precision={precision}
+              timed={timed}
+              patch={patch}
+              edit={edit}
+              remove={remove}
+            />
+          )}
+          <div className="quick-stats">
+            {[
+              ["ベスト", best],
+              ["mo3", average(solves, 3)],
+              ["ao5", average(solves, 5)],
+              ["ao12", average(solves, 12)],
+            ]
+              .filter(
+                (_, i) => event !== "333mbf" && (event !== "333fm" || i < 2),
+              )
+              .map(([label, value]) => (
+                <div key={String(label)}>
+                  <span>{label}</span>
+                  <strong>{statsFormat(value as number | null)}</strong>
+                </div>
+              ))}
           </div>
-        )}
-        {latest && !timer.active && !pending && (
-          <LastSolveActions
-            key={latest.id}
-            solve={latest}
-            precision={precision}
-            timed={timed}
-            patch={patch}
-            edit={edit}
-            remove={remove}
-          />
-        )}
-        <div className="quick-stats">
-          {[
-            ["ベスト", best],
-            ["mo3", average(solves, 3)],
-            ["ao5", average(solves, 5)],
-            ["ao12", average(solves, 12)],
-          ]
-            .filter(
-              (_, i) => event !== "333mbf" && (event !== "333fm" || i < 2),
-            )
-            .map(([label, value]) => (
-              <div key={String(label)}>
-                <span>{label}</span>
-                <strong>{statsFormat(value as number | null)}</strong>
-              </div>
-            ))}
         </div>
       </section>
     </>

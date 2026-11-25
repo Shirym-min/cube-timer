@@ -31,6 +31,7 @@ try {
   const timer = await page.locator(".timer-touch").boundingBox();
   assert.ok(records.x >= workspace.x + workspace.width - 1);
   assert.ok(Math.abs(timer.x + timer.width / 2 - (workspace.x + workspace.width / 2)) < 2);
+  assert.ok(Math.abs(timer.y + timer.height / 2 - 480) < 12);
   await page.locator(".diagram twisty-player").waitFor();
   await page.waitForFunction(() => document.querySelector(".toast")?.dataset.visible !== "true");
   await page.keyboard.press("Tab");
@@ -97,7 +98,7 @@ try {
   const lower = { x: lowerStage.x + 12, y: lowerStage.y + lowerStage.height - 12 };
   await touch("touchStart", lower);
   await mobile.locator(".timer-stage.ready").waitFor();
-  await touch("touchMove", { x: lower.x + 35, y: lower.y });
+  await touch("touchMove", { x: lower.x + 60, y: lower.y });
   await touch("touchEnd");
   assert.equal(await mobile.locator(".timer-stage.running").count(), 0);
 
@@ -144,7 +145,42 @@ try {
   await handle.waitFor({ state: "detached" });
   await mobile.getByRole("button", { name: /^記録/ }).tap();
   assert.equal(await mobile.locator(".records-table tbody tr").count(), 0);
-  console.log("PASS: compact timer layout, clipboard, shared header height, pointer focus, expanded start area, and mobile solve actions.");
+  for (const { width, height } of [{ width: 568, height: 320 }, { width: 844, height: 390 }]) {
+    await mobile.setViewportSize({ width, height });
+    await timerTouch.waitFor();
+    const rail = await mobile.locator(".rail").boundingBox();
+    const landscapeWorkspace = await mobile.locator(".timer-workspace").boundingBox();
+    const landscapeRecords = await mobile.locator(".records-pane").boundingBox();
+    const scramble = await mobile.locator(".scramble-panel").boundingBox();
+    const landscapeReadout = await timerTouch.boundingBox();
+    assert.equal(rail.x, 0);
+    assert.equal(rail.height, height);
+    assert.ok(rail.width < landscapeWorkspace.width);
+    assert.ok(landscapeRecords.x >= landscapeWorkspace.x + landscapeWorkspace.width - 1);
+    assert.ok(scramble.height > 0 && landscapeReadout.y >= scramble.y + scramble.height);
+    assert.equal(await mobile.locator(".mobile-tabs").isVisible(), false);
+    assert.equal(await mobile.getByRole("combobox", { name: "種目", exact: true }).count(), 1);
+    assert.deepEqual(await mobile.evaluate(() => {
+      const workspace = document.querySelector(".timer-workspace");
+      window.scrollTo(0, 100);
+      workspace.scrollTop = 100;
+      return [document.documentElement.scrollWidth, document.documentElement.scrollHeight, scrollY, workspace.scrollTop];
+    }), [width, height, 0, 0]);
+  }
+  await mobile.locator('.timer-touch[aria-disabled="false"]').waitFor();
+  const landscapeCenter = await center(timerTouch);
+  const manualButtonCenter = await center(mobile.getByRole("button", { name: "タイムを手入力", exact: true }));
+  await touch("touchStart", landscapeCenter);
+  await mobile.locator(".timer-stage.ready").waitFor();
+  await touch("touchEnd");
+  await mobile.locator(".timer-stage.running").waitFor();
+  assert.deepEqual(await center(timerTouch), landscapeCenter);
+  await mobile.waitForTimeout(250);
+  await pressAt(manualButtonCenter, 15);
+  await plusTwo.tap();
+  await mobile.getByRole("button", { name: "+2", pressed: true }).waitFor();
+  assert.equal(await mobile.locator("dialog[open]").count(), 0);
+  console.log("PASS: compact timer layout, clipboard, shared header height, pointer focus, mobile solve actions, and fixed landscape workspace.");
 } finally {
   await browser.close();
 }

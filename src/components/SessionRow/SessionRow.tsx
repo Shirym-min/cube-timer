@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, Layers, Trash2 } from "lucide-react";
+import { Check, ChevronRight, Layers, Pencil, Trash2 } from "lucide-react";
 import { EVENTS, type Session } from "../../lib/model";
 
 export function SessionRow({
@@ -31,7 +31,12 @@ export function SessionRow({
             {EVENTS.find((e) => e[0] === session.event)![1]} · {count}回
           </small>
         </span>
-        {current && <span className="session-current">選択中</span>}
+        {current && (
+          <span className="session-current" title="選択中">
+            <Check size={16} aria-hidden="true" />
+            <span className="sr-only">選択中</span>
+          </span>
+        )}
         <ChevronRight size={16} />
       </button>
       <div className="session-row-actions">
@@ -57,7 +62,10 @@ export function SessionRow({
             <button>保存</button>
           </form>
         ) : (
-          <button onClick={() => setRename(true)}>名前を変更</button>
+          <button type="button" className="icon-button" aria-label="名前を変更" title="名前を変更"
+            onClick={() => setRename(true)}>
+            <Pencil size={16} aria-hidden="true" />
+          </button>
         )}
         <button
           className="danger"

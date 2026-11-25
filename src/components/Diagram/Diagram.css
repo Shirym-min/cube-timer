@@ -42,3 +42,10 @@
   .mobile-timer .diagram,
   .mobile-timer .diagram-placeholder { height: 58px; }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .timer-layout :is(.diagram, .diagram-placeholder) {
+    grid-area: 1 / 1;
+    height: var(--scramble-row-height);
+  }
+}

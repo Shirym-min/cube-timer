@@ -26,3 +26,22 @@
     padding: 0;
   }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  html:has(.app) { overscroll-behavior: none; }
+  .app {
+    display: flex;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: clip;
+  }
+  .app .app-main {
+    height: 100%;
+    min-height: 0;
+    padding-inline-end: env(safe-area-inset-right);
+    padding-block-end: env(safe-area-inset-bottom);
+  }
+  .focus-mode.app .app-main { padding-inline-start: env(safe-area-inset-left); }
+  .focus-mode .timer-layout { display: grid; }
+}

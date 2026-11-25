@@ -15,11 +15,13 @@ export function SessionsPage({ sessions, solves, selectedId, openNewSession, sel
       <header className="page-heading">
         <h1>セッション</h1>
         <button
-          className="primary"
+          type="button"
+          className="primary icon-button"
+          aria-label="新規セッション"
+          title="新規セッション"
           onClick={openNewSession}
         >
-          <Plus size={16} />
-          新規セッション
+          <Plus size={20} aria-hidden="true" />
         </button>
       </header>
       <div className="session-list">

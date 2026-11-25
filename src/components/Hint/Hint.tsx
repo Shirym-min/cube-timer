@@ -126,6 +126,8 @@ export function Hint({
         ref={trigger}
         className="hint-button"
         disabled={disabled}
+        aria-label="ヒント"
+        title="ヒント"
         popoverTarget={id}
         aria-expanded={open}
         aria-controls={id}
@@ -144,8 +146,7 @@ export function Hint({
           }
         }}
       >
-        <Lightbulb size={15} />
-        ヒント
+        <Lightbulb size={18} aria-hidden="true" />
         <kbd className="shortcut-hint" aria-hidden="true">H</kbd>
       </button>
       <div

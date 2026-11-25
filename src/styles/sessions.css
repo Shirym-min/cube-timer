@@ -1,3 +1,8 @@
+.page-heading .primary.icon-button {
+  width: 44px;
+  height: 44px;
+}
+
 .session-list {
   display: grid;
   gap: 15px;

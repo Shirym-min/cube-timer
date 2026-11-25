@@ -1,4 +1,4 @@
-import { ChevronRight, Cloud, RefreshCw } from "lucide-react";
+import { ChevronRight, CircleUserRound, LogIn, RefreshCw } from "lucide-react";
 import { pageTitles, type Page } from "../../navigation";
 
 export function TopBar({
@@ -14,8 +14,10 @@ export function TopBar({
   sync: () => Promise<void>;
   openAccount: () => void;
 }) {
+  const accountLabel = hasAccount || hasDrive ? "アカウント" : "ログイン";
+  const syncLabel = syncing ? "同期中" : "同期";
   return (
-    <header className="topbar">
+    <header className="topbar" data-page={page}>
       <div className="breadcrumb">
         <span>{pageTitles[page]}</span>
         {(page === "timer" || page === "stats") && (
@@ -30,21 +32,28 @@ export function TopBar({
       <div className="topbar-actions">
         {hasDrive && page !== "video" && (
           <button
-            className="account-button"
+            type="button"
+            className="icon-button account-button"
+            aria-label={syncLabel}
+            title={syncLabel}
+            aria-busy={syncing}
             onClick={() => void sync()}
             disabled={locked || !canSync || syncing}
           >
             <RefreshCw size={16} aria-hidden="true" />
-            <span>{syncing ? "同期中" : "同期"}</span>
           </button>
         )}
         <button
-          className="account-button"
+          type="button"
+          className="icon-button account-button"
+          aria-label={accountLabel}
+          title={accountLabel}
           onClick={openAccount}
           disabled={locked}
         >
-          <Cloud size={17} />
-          <span>{hasAccount || hasDrive ? "アカウント" : "ログイン"}</span>
+          {hasAccount || hasDrive
+            ? <CircleUserRound size={20} aria-hidden="true" />
+            : <LogIn size={20} aria-hidden="true" />}
         </button>
       </div>
     </header>

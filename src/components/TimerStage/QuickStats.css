@@ -60,3 +60,7 @@
     display: none;
   }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .timer-layout .quick-stats { display: none; }
+}

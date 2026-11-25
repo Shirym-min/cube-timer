@@ -26,3 +26,9 @@
     margin: 4px 0;
   }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .timer-layout .multi-controls { margin: 0; padding-inline-end: 4px; gap: 6px; }
+  .timer-layout .multi-controls label { gap: 3px; }
+  .timer-layout .multi-controls :is(input, select) { width: 44px; min-height: 44px; padding: 2px; }
+}

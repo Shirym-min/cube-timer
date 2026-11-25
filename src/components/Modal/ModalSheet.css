@@ -26,3 +26,7 @@ dialog.modal-sheet[open][data-dragging] { transition: none; }
 @media (max-width: 760px), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
   dialog.modal-sheet, dialog.modal-sheet.wide { width: 100%; max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  dialog.modal-sheet { padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); }
+}

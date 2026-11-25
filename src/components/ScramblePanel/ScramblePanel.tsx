@@ -214,9 +214,8 @@ export function ScramblePanel({ event, locked, settings, changeEvent, state }: {
             {["333", "333oh", "333fm"].includes(event) && (
               <Suspense
                 fallback={
-                  <button className="hint-button" disabled>
-                    <Lightbulb size={15} />
-                    ヒント
+                  <button className="hint-button" aria-label="ヒント" disabled>
+                    <Lightbulb size={18} aria-hidden="true" />
                   </button>
                 }
               >
