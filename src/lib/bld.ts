@@ -3,7 +3,7 @@ import { KPattern } from "cubing/kpuzzle";
 import { cube3x3x3 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
 import { experimentalSolve3x3x3IgnoringCenters } from "cubing/search";
-import { m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, yPerm } from "./bldMethods";
+import { m2Even, m2Parity, m2Setups, m2Special, opCornerSetups, opEdgeSetups, opParity, tPerm, yPerm } from "./bldMethods";
 
 export type Orbit = "EDGES" | "CORNERS";
 export type Breaks = "any" | "none" | "required";
@@ -207,8 +207,9 @@ export type MemoFrame = {
   centers: CubeFace[];
   transfers: Transfer[];
 };
-export type PreviewMethod = "3-style" | "m2-op";
-export type PreviewStep = { label: string; orbit?: Orbit; algorithm?: string };
+export type PreviewMethod = "3-style" | "m2-op" | "op";
+export type PreviewStep = { label: string; orbit?: Orbit; algorithm?: string; moves?: MemoMove[] };
+export type PreviewFrame = MemoFrame & { pattern: KPattern };
 
 function memoFrame(state: Record<string, Pieces>, centers: CubeFace[], transfers: Transfer[]): MemoFrame {
   function colors(orbit: Orbit): Record<string, CubeFace> {
@@ -220,6 +221,11 @@ function memoFrame(state: Record<string, Pieces>, centers: CubeFace[], transfers
     }));
   }
   return { colors: { EDGES: colors("EDGES"), CORNERS: colors("CORNERS") }, centers, transfers };
+}
+
+function previewFrame(pattern: KPattern, transfers: Transfer[]): PreviewFrame {
+  const centers = pattern.patternData.CENTERS.pieces.map((piece) => FACES[piece]);
+  return { ...memoFrame(pattern.patternData, centers, transfers), pattern };
 }
 
 function memoTarget(orbit: Orbit, buffer: number, letter: string) {
@@ -240,8 +246,7 @@ function composeTransfers(parts: Transfer[][]): Transfer[] {
 
 function swapFrames(pattern: KPattern, options: BldOptions, groups: MemoMove[][]) {
   const state = { EDGES: clone(pattern.patternData.EDGES), CORNERS: clone(pattern.patternData.CORNERS) };
-  const centers = pattern.patternData.CENTERS.pieces.map((piece) => FACES[piece]);
-  const frames = [memoFrame(state, centers, [])];
+  const frames = [previewFrame(pattern, [])];
   for (const group of groups) {
     const parts = group.map(({ orbit, letter }) => {
       const buffer = pieceOrder[orbit].indexOf(options[orbit].buffer);
@@ -257,7 +262,12 @@ function swapFrames(pattern: KPattern, options: BldOptions, groups: MemoMove[][]
       swap(state[orbit], buffer, target, size);
       return transfers;
     });
-    frames.push(memoFrame(state, centers, composeTransfers(parts)));
+    const snapshot = new KPattern(pattern.kpuzzle, {
+      ...pattern.patternData,
+      EDGES: clone(state.EDGES),
+      CORNERS: clone(state.CORNERS),
+    });
+    frames.push(previewFrame(snapshot, composeTransfers(parts)));
   }
   return frames;
 }
@@ -278,14 +288,15 @@ function threeStylePreview(pattern: KPattern, options: BldOptions, sequences: Se
     const targets = parity ? sequences[orbit].slice(0, -1) : sequences[orbit];
     for (let index = 0; index < targets.length; index += 2) {
       const pair = targets.slice(index, index + 2);
-      groups.push(pair.map((letter) => ({ orbit, letter })));
-      steps.push({ orbit, label: describeMoves(orbit, pair) });
+      const moves = pair.map((letter) => ({ orbit, letter }));
+      groups.push(moves);
+      steps.push({ orbit, label: describeMoves(orbit, pair), moves });
     }
   }
   if (parity) {
     const moves = ORBITS.map((orbit) => ({ orbit, letter: sequences[orbit].at(-1)! }));
     groups.push(moves);
-    steps.push({ label: `パリティ（${moves.map(({ orbit, letter }) => describeMoves(orbit, [letter])).join("、")}）` });
+    steps.push({ label: `パリティ（${moves.map(({ orbit, letter }) => describeMoves(orbit, [letter])).join("、")}）`, moves });
   }
   return { frames: swapFrames(pattern, options, groups), steps };
 }
@@ -295,23 +306,27 @@ function setupShot(setup: string, base: string) {
   return prefix.concat(new Alg(base)).concat(prefix.invert()).toString();
 }
 
-function m2OpPreview(pattern: KPattern, sequences: Sequences) {
+function shotPreview(pattern: KPattern, sequences: Sequences, method: "m2-op" | "op") {
+  const m2 = method === "m2-op";
   const steps: PreviewStep[] = [];
   for (const [index, letter] of sequences.EDGES.entries()) {
-    memoTarget("EDGES", pieceOrder.EDGES.indexOf("DF"), letter);
+    memoTarget("EDGES", pieceOrder.EDGES.indexOf(m2 ? "DF" : "UR"), letter);
     const effective = index % 2 === 1 ? m2Even[letter] ?? letter : letter;
-    steps.push({ orbit: "EDGES", label: describeMoves("EDGES", [letter]),
-      algorithm: m2Special[effective] ?? setupShot(m2Setups[effective], "M2") });
+    const algorithm = m2 ? m2Special[effective] ?? setupShot(m2Setups[effective], "M2")
+      : setupShot(opEdgeSetups[letter], tPerm);
+    steps.push({ orbit: "EDGES", label: describeMoves("EDGES", [letter]), algorithm });
   }
-  if (sequences.EDGES.length % 2 === 1) steps.push({ label: "M2 のパリティ処理", algorithm: m2Parity });
+  if (sequences.EDGES.length % 2 === 1) {
+    steps.push({ label: m2 ? "M2 のパリティ処理" : "Old Pochmann のパリティ処理",
+      algorithm: m2 ? m2Parity : opParity });
+  }
   for (const letter of sequences.CORNERS) {
     memoTarget("CORNERS", pieceOrder.CORNERS.indexOf("UBL"), letter);
     steps.push({ orbit: "CORNERS", label: describeMoves("CORNERS", [letter]),
       algorithm: setupShot(opCornerSetups[letter], yPerm) });
   }
 
-  const centerColors = (state: KPattern) => state.patternData.CENTERS.pieces.map((piece) => FACES[piece]);
-  const frames = [memoFrame(pattern.patternData, centerColors(pattern), [])];
+  const frames = [previewFrame(pattern, [])];
   let state = pattern;
   for (const { algorithm } of steps) {
     const transformation = pattern.kpuzzle.algToTransformation(algorithm!);
@@ -328,55 +343,43 @@ function m2OpPreview(pattern: KPattern, sequences: Sequences) {
       if (source !== dest) transfers.push({ from: `CENTER-${FACES[source]}`, to: `CENTER-${FACES[dest]}` });
     });
     state = state.applyTransformation(transformation);
-    frames.push(memoFrame(state.patternData, centerColors(state), transfers));
+    frames.push(previewFrame(state, transfers));
   }
   return { frames, steps };
 }
 
 export function memoPreview(pattern: KPattern, options: BldOptions, sequences: Sequences, method: PreviewMethod) {
-  return method === "3-style" ? threeStylePreview(pattern, options, sequences) : m2OpPreview(pattern, sequences);
+  return method === "3-style" ? threeStylePreview(pattern, options, sequences) : shotPreview(pattern, sequences, method);
 }
 
-const commutators = { EDGES: "[M', U2]", CORNERS: "[R' D' R, U]" };
-const setupMoves = ["U", "L", "F", "R", "B", "D"].flatMap((face) => [face, face + "'", face + "2"]);
+export function previewCommutatorTargets(options: BldOptions, moves: MemoMove[]) {
+  if (moves.length !== 2) return undefined;
+  const [first, second] = moves;
+  const { orbit } = first;
+  if (orbit !== second.orbit || speffzSticker(orbit, first.letter).piece === speffzSticker(orbit, second.letter).piece)
+    return undefined;
+  return { orbit, letters: [bufferLetter(orbit, options[orbit].buffer), first.letter, second.letter] };
+}
+
+export async function previewStepAlgorithm(options: BldOptions, moves: MemoMove[]) {
+  if (moves.length !== 2) throw Error("3-style は交換先が2つ揃うと回転手順を再生できます。");
+  const targets = previewCommutatorTargets(options, moves);
+  if (targets) return (await generateCommutator(targets.orbit, targets.letters)).execution;
+
+  // A joint parity shot or an orientation-only pair has no three-piece cycle
+  // on a single orbit. Solve the exact relative pattern to find physical turns.
+  const puzzle = await cube3x3x3.kpuzzle();
+  const [, target] = swapFrames(puzzle.defaultPattern(), options, [moves]);
+  const solution = await experimentalSolve3x3x3IgnoringCenters(target.pattern);
+  return solution.invert().toString();
+}
 
 export async function generateCommutator(orbit: Orbit, selected: string[]) {
-  const targets = selected.map((letter) => letters[orbit].find((item) => item.letter === letter));
-  if (targets.length !== 3 || targets.some((target) => !target) ||
-      new Set(targets.map((target) => target?.piece)).size !== 3)
+  const [first, second, third] = selected.map((letter) => letters[orbit].find((item) => item.letter === letter));
+  if (selected.length !== 3 || !first || !second || !third ||
+      new Set([first.piece, second.piece, third.piece]).size !== 3)
     throw Error("異なる3つのピースを選んでください。");
 
-  const puzzle = await cube3x3x3.kpuzzle();
-  const size = orientationCount(orbit);
-  function stickerMap(alg: string) {
-    const { permutation, orientationDelta } = puzzle.algToTransformation(alg).transformationData[orbit];
-    const positions = new Map(permutation.map((src, dest) => [src, dest]));
-    return letters[orbit].map(({ piece, sticker }) => {
-      const dest = positions.get(piece)!;
-      return letters[orbit].findIndex((entry) => entry.piece === dest &&
-        entry.sticker === mod(sticker - orientationDelta[dest], size));
-    });
-  }
-  const base = commutators[orbit];
-  const cycle = stickerMap(base);
-  const moves = setupMoves.map(stickerMap);
-  const start = selected.map((letter) => letter.charCodeAt(0) - 65);
-  const queue = [{ positions: start, setup: [] as string[] }];
-  const seen = new Set([start.join(",")]);
-
-  // Find a setup that sends the three selected stickers into the base cycle.
-  for (let i = 0; i < queue.length; i++) {
-    const { positions, setup } = queue[i];
-    if (positions.every((sticker, index) => cycle[sticker] === positions[(index + 1) % 3])) {
-      return { setup: setup.join(" "), base, alg: setup.length ? `[${setup.join(" ")}: ${base}]` : base };
-    }
-    moves.forEach((move, index) => {
-      const next = positions.map((position) => move[position]);
-      const key = next.join(",");
-      if (seen.has(key)) return;
-      seen.add(key);
-      queue.push({ positions: next, setup: [...setup, setupMoves[index]] });
-    });
-  }
-  throw Error("選んだステッカーの手順を作成できませんでした。");
+  const { findCommutator } = await import("./bldCommutator");
+  return findCommutator(orbit, [first, second, third]);
 }

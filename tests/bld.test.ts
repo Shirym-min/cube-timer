@@ -1,5 +1,6 @@
+import { Alg } from "cubing/alg";
 import { expect, it } from "vitest";
-import { bufferLetter, FACES, generateBld, generateCommutator, loadBldScramble, memoFrames, memoPreview, speffzSticker, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
+import { bufferLetter, FACES, generateBld, generateCommutator, loadBldScramble, memoFrames, memoPreview, previewStepAlgorithm, speffzSticker, traceMemo, traceMemoSteps, verifyMemo, type BldOptions } from "../src/lib/bld";
 
 it("maps standard Speffz buffer stickers", () => {
   expect(bufferLetter("EDGES", "UF")).toBe("C");
@@ -128,15 +129,21 @@ it("replays paired 3-style shots and the M2/Old Pochmann algorithms through pari
   expect(sequences.CORNERS.length % 2).toBe(1);
   const shots = sequences.EDGES.length + sequences.CORNERS.length;
 
-  for (const method of ["3-style", "m2-op"] as const) {
-    const { frames, steps } = memoPreview(pattern, options, sequences, method);
-    expect(steps).toHaveLength(method === "3-style" ? shots / 2 : shots + 1);
-    const parity = method === "3-style" ? steps.at(-1) : steps[sequences.EDGES.length];
+  for (const method of ["3-style", "m2-op", "op"] as const) {
+    const memo = method === "op"
+      ? { ...sequences, EDGES: [...traceMemo(pattern, "EDGES", "UR")] }
+      : sequences;
+    const { frames, steps } = memoPreview(pattern, options, memo, method);
+    expect(steps).toHaveLength(method === "3-style" ? shots / 2 : memo.EDGES.length + memo.CORNERS.length + 1);
+    const parity = method === "3-style" ? steps.at(-1) : steps[memo.EDGES.length];
     expect(parity?.label).toContain("パリティ");
     expect(steps[0].algorithm).toEqual(method === "3-style" ? undefined : expect.any(String));
     for (let index = 1; index < frames.length; index++) {
       const previous = frames[index - 1];
       const frame = frames[index];
+      const step = steps[index - 1];
+      const algorithm = step.algorithm ?? await previewStepAlgorithm(options, step.moves!);
+      expect(previous.pattern.applyAlg(algorithm).patternData).toEqual(frame.pattern.patternData);
       const colorEntries = (item: typeof frame) => ({
         ...Object.fromEntries(Object.entries(item.colors).flatMap(([orbit, stickers]) =>
           Object.entries(stickers).map(([letter, color]) => [`${orbit}-${letter}`, color]))),
@@ -151,7 +158,7 @@ it("replays paired 3-style shots and the M2/Old Pochmann algorithms through pari
     for (const colors of Object.values(frames.at(-1)!.colors))
       expect(Object.values(colors)).toEqual(FACES.flatMap((face) => Array(4).fill(face)));
   }
-});
+}, 20000);
 
 it("generates a commutator that cycles the selected oriented stickers and preserves every other piece", async () => {
   const { cube3x3x3 } = await import("cubing/puzzles");
@@ -161,10 +168,15 @@ it("generates a commutator that cycles the selected oriented stickers and preser
     ["EDGES", ["W", "H", "J"]],
     ["CORNERS", ["E", "K", "W"]],
     ["CORNERS", ["X", "C", "F"]],
+    ["CORNERS", ["A", "B", "C"]],
+    ["CORNERS", ["A", "C", "B"]],
   ] as const) {
     const targets = chosen.map((letter) => speffzSticker(orbit, letter));
-    const { alg } = await generateCommutator(orbit, [...chosen]);
-    const data = cube.algToTransformation(alg).transformationData;
+    const { alg, execution, moveCount } = await generateCommutator(orbit, [...chosen]);
+    const transformation = cube.algToTransformation(execution);
+    expect(transformation.isIdentical(cube.algToTransformation(alg))).toBe(true);
+    expect([...new Alg(execution).childAlgNodes()]).toHaveLength(moveCount);
+    const data = transformation.transformationData;
     const size = orbit === "EDGES" ? 2 : 3;
     for (const [index, target] of targets.entries()) {
       const next = targets[(index + 1) % 3];
@@ -182,3 +194,32 @@ it("generates a commutator that cycles the selected oriented stickers and preser
   }
   await expect(generateCommutator("EDGES", ["A", "Q", "C"])).rejects.toThrow("異なる3つ");
 });
+
+it("chooses different direct commutators for edge cycles and combines setup turns when they overlap", async () => {
+  const first = await generateCommutator("EDGES", ["A", "N", "K"]);
+  const second = await generateCommutator("EDGES", ["C", "U", "W"]);
+  expect(first.setup).toBe("");
+  expect(second.setup).toBe("");
+  expect(first.base).not.toBe(second.base);
+  expect(first.moveCount).toBeLessThanOrEqual(8);
+  expect(second.moveCount).toBe(4);
+
+  const corners = await generateCommutator("CORNERS", ["A", "B", "C"]);
+  expect(corners.moveCount).toBeLessThanOrEqual(9);
+});
+
+it("replays orientation-only 3-style pairs with legal face turns", async () => {
+  const options: BldOptions = {
+    EDGES: { min: 0, max: 16, breaks: "any", buffer: "DF" },
+    CORNERS: { min: 0, max: 10, breaks: "any", buffer: "UBL" },
+  };
+  const { pattern } = await loadBldScramble("R U", options);
+  for (const sequences of [
+    { EDGES: ["A", "Q"], CORNERS: [] },
+    { EDGES: [], CORNERS: ["C", "J"] },
+  ]) {
+    const { frames, steps } = memoPreview(pattern, options, sequences, "3-style");
+    const algorithm = await previewStepAlgorithm(options, steps[0].moves!);
+    expect(pattern.applyAlg(algorithm).patternData).toEqual(frames[1].pattern.patternData);
+  }
+}, 20000);

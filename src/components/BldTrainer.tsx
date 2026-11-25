@@ -306,10 +306,10 @@ export function BldTrainer({ openGuide, backURL, onBack, onCloseGuide }: {
 function PreviewContent({ exercise, inputs }: { exercise: Exercise; inputs: typeof emptyMemo }) {
   const [method, setMethod] = useState<PreviewMethod>("3-style");
   const [source, setSource] = useState<PreviewSource>("answer");
-  const [view, setView] = useState<CubeView>("net");
-  const buffers = method === "m2-op"
-    ? { EDGES: "DF", CORNERS: "UBL" }
-    : { EDGES: exercise.options.EDGES.buffer, CORNERS: exercise.options.CORNERS.buffer };
+  const [view, setView] = useState<CubeView>("3d");
+  const buffers = method === "3-style"
+    ? { EDGES: exercise.options.EDGES.buffer, CORNERS: exercise.options.CORNERS.buffer }
+    : { EDGES: method === "m2-op" ? "DF" : "UR", CORNERS: "UBL" };
   const mismatchedInput = source === "input" && ORBITS.some((orbit) => buffers[orbit] !== exercise.options[orbit].buffer);
 
   function sequence(orbit: Orbit) {
@@ -321,7 +321,7 @@ function PreviewContent({ exercise, inputs }: { exercise: Exercise; inputs: type
   let preview;
   let error = "";
   if (mismatchedInput) {
-    error = "M2・Old Pochmann で入力した文字列を再生するには、スクランブル設定でエッジを DF、コーナーを UBL に設定してから練習してください。";
+    error = `この解法で入力した文字列を再生するには、スクランブル設定でエッジを ${buffers.EDGES}、コーナーを ${buffers.CORNERS} に設定してから練習してください。`;
   } else {
     try {
       preview = memoPreview(exercise.pattern, exercise.options, { EDGES: sequence("EDGES"), CORNERS: sequence("CORNERS") }, method);
@@ -335,7 +335,8 @@ function PreviewContent({ exercise, inputs }: { exercise: Exercise; inputs: type
       <label>解法
         <select value={method} onChange={(event) => setMethod(event.target.value as PreviewMethod)}>
           <option value="3-style">3-style</option>
-          <option value="m2-op">M2・Old Pochmann</option>
+          <option value="m2-op">M2（エッジ）・Old Pochmann（コーナー）</option>
+          <option value="op">Old Pochmann</option>
         </select>
       </label>
       <label>交換文字列
@@ -348,7 +349,7 @@ function PreviewContent({ exercise, inputs }: { exercise: Exercise; inputs: type
     {error && <p role="alert">{error}</p>}
     {preview && <>
       <p className="muted bld-preview-buffers">バッファ　エッジ {buffers.EDGES}、コーナー {buffers.CORNERS}</p>
-      <BldSwapPreview key={`${method}:${source}`} {...preview} view={view} onView={setView} />
+      <BldSwapPreview key={`${method}:${source}`} {...preview} options={exercise.options} view={view} onView={setView} />
     </>}
   </div>;
 }

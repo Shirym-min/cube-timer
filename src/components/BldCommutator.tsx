@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { Alg } from "cubing/alg";
+import { useEffect, useRef, useState } from "react";
 import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
-import { BldHighlightCube } from "./BldHighlightCube";
-import { generateCommutator, ORBITS, ORBIT_LABELS, speffzSticker, type Orbit } from "../lib/bld";
+import { BldPlaybackCube } from "./BldPlaybackCube";
+import { ORBITS, ORBIT_LABELS, speffzSticker, type generateCommutator, type Orbit } from "../lib/bld";
 
 export function BldCommutator() {
   const [orbit, setOrbit] = useState<Orbit>("CORNERS");
@@ -11,6 +10,39 @@ export function BldCommutator() {
   const [result, setResult] = useState<Awaited<ReturnType<typeof generateCommutator>>>();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+
+  const workerRef = useRef<Worker | null>(null);
+  useEffect(() => () => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+  }, []);
+
+  function generate() {
+    setBusy(true);
+    setResult(undefined);
+    setStatus("");
+    try {
+      if (!workerRef.current) {
+        const worker = new Worker(new URL("../lib/bldCommutator.worker.ts", import.meta.url), { type: "module" });
+        worker.onmessage = ({ data }) => {
+          setBusy(false);
+          if (data.error) setStatus(data.error);
+          else setResult(data.result);
+        };
+        worker.onerror = () => {
+          worker.terminate();
+          workerRef.current = null;
+          setBusy(false);
+          setStatus("手順を生成できませんでした。再試行してください。");
+        };
+        workerRef.current = worker;
+      }
+      workerRef.current.postMessage({ orbit, letters });
+    } catch {
+      setBusy(false);
+      setStatus("手順を生成できませんでした。");
+    }
+  }
 
   function clear() {
     setLetters([]);
@@ -39,35 +71,25 @@ export function BldCommutator() {
         }} />
       <div className="bld-actions">
         <button type="button" className="primary" disabled={letters.length !== 3 || busy}
-          onClick={async () => {
-            setBusy(true);
-            setStatus("");
-            try {
-              setResult(await generateCommutator(orbit, letters));
-            } catch (error) {
-              setStatus(error instanceof Error ? error.message : "手順を生成できませんでした。");
-            } finally {
-              setBusy(false);
-            }
-          }}>{busy ? "生成中…" : "コミュテーターを生成"}</button>
+          onClick={generate}>{busy ? "生成中…" : "コミュテーターを生成"}</button>
         <button type="button" disabled={busy || !letters.length} onClick={clear}>選択を解除</button>
       </div>
       {result && (
         <div className="bld-section">
           <dl className="bld-guide-steps">
             <div><dt>セットアップ</dt><dd><code>{result.setup || "なし"}</code></dd></div>
-            <div><dt>基本手順</dt><dd><code>{result.base}</code></dd></div>
-            <div><dt>通し手順</dt><dd><code>{result.alg}</code></dd></div>
+            <div><dt>コミュテーター</dt><dd><code>{result.base}</code></dd></div>
+            <div><dt>実行手順（{result.moveCount}手）</dt><dd><code>{result.execution}</code></dd></div>
           </dl>
           <button type="button" onClick={async () => {
             try {
-              await navigator.clipboard.writeText(new Alg(result.alg).expand().toString());
+              await navigator.clipboard.writeText(result.execution);
               setStatus("手順をコピーしました。");
             } catch {
               setStatus("手順をコピーできませんでした。");
             }
           }}>手順をコピー</button>
-          <BldHighlightCube highlights={letters.map((letter) => ({ orbit, letter }))} />
+          <BldPlaybackCube algorithm={result.execution} top="yellow" label="コミュテーターの3D再生" />
         </div>
       )}
       {status && <p role="status">{status}</p>}

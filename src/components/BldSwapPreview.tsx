@@ -1,149 +1,119 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BldCubeNet, BldCubeViewToggle, type CubeView } from "./BldCubeNet";
-import type { MemoFrame, PreviewStep } from "../lib/bld";
+import { BldPlaybackCube } from "./BldPlaybackCube";
+import { previewCommutatorTargets, previewStepAlgorithm, type BldOptions, type PreviewFrame, type PreviewStep } from "../lib/bld";
 
-type StickerMove = { start: HTMLElement; end: HTMLElement };
-type SwapAnimation = { animations: Animation[]; clear: () => void };
-
-function animateNet(host: HTMLElement, moves: StickerMove[], easing: string): SwapAnimation {
-  const root = host.getBoundingClientRect();
-  const ghosts = moves.map(({ start, end }) => {
-    const a = start.getBoundingClientRect();
-    const b = end.getBoundingClientRect();
-    const ghost = document.createElement("span");
-    ghost.className = "bld-swap-ghost";
-    ghost.setAttribute("aria-hidden", "true");
-    ghost.textContent = start.textContent;
-    Object.assign(ghost.style, {
-      left: `${a.left - root.left}px`, top: `${a.top - root.top}px`,
-      width: `${a.width}px`, height: `${a.height}px`,
-      background: getComputedStyle(start).backgroundColor,
-    });
-    host.append(ghost);
-    return { ghost, dx: b.left - a.left, dy: b.top - a.top };
-  });
-  const animations = ghosts.map(({ ghost, dx, dy }) => ghost.animate([
-    { transform: "translate(0, 0) scale(1)" },
-    { transform: `translate(${dx / 2}px, ${dy / 2 - 12}px) scale(1.1)`, offset: 0.5 },
-    { transform: `translate(${dx}px, ${dy}px) scale(1)` },
-  ], { duration: 360, easing, fill: "forwards" }));
-  moves.forEach(({ start }) => { start.style.visibility = "hidden"; });
-  return {
-    animations,
-    clear: () => {
-      ghosts.forEach(({ ghost }) => ghost.remove());
-      moves.forEach(({ start }) => { start.style.visibility = ""; });
-    },
-  };
-}
-
-function animateCube(moves: StickerMove[], easing: string): SwapAnimation {
-  // Keep the color layers on each face so they follow the cube as it rotates.
-  const tiles = moves.map(({ start, end }) => ({
-    end,
-    color: getComputedStyle(start).backgroundColor,
-  }));
-  const layers: HTMLElement[] = [];
-  const animations = tiles.flatMap(({ end, color }) => {
-    const fill = document.createElement("span");
-    const outline = document.createElement("span");
-    fill.className = "bld-swap-fill";
-    fill.style.backgroundColor = color;
-    outline.className = "bld-swap-outline";
-
-    for (const layer of [fill, outline]) {
-      layer.setAttribute("aria-hidden", "true");
-      end.append(layer);
-      layers.push(layer);
-    }
-    return [
-      fill.animate([
-        { opacity: 0 }, { opacity: 0, offset: 0.25 }, { opacity: 1, offset: 0.82 }, { opacity: 1 },
-      ], { duration: 360, easing, fill: "both" }),
-      outline.animate([
-        { opacity: 0 }, { opacity: 1, offset: 0.22 }, { opacity: 1, offset: 0.75 }, { opacity: 0 },
-      ], { duration: 360, easing, fill: "both" }),
-    ];
-  });
-  return { animations, clear: () => layers.forEach((layer) => layer.remove()) };
-}
-
-export function BldSwapPreview({ frames, steps, view, onView }: {
-  frames: MemoFrame[];
+export function BldSwapPreview({ frames, steps, options, view, onView }: {
+  frames: PreviewFrame[];
   steps: PreviewStep[];
+  options: BldOptions;
   view: CubeView;
   onView: (view: CubeView) => void;
 }) {
-  const host = useRef<HTMLDivElement>(null);
-  const active = useRef<SwapAnimation>(null);
   const [index, setIndex] = useState(0);
-  const [moving, setMoving] = useState(false);
+  const [algorithm, setAlgorithm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const worker = useRef<Worker>(null);
+  const request = useRef(0);
+  const pending = useRef<{ id: number; finishEmpty: () => void }>(null);
+  const next = steps[index];
+  const busy = loading || Boolean(algorithm);
 
-  function clearAnimation() {
-    const animation = active.current;
-    active.current = null;
-    animation?.animations.forEach((item) => item.cancel());
-    animation?.clear();
+  useEffect(() => () => {
+    pending.current = null;
+    worker.current?.terminate();
+    worker.current = null;
+  }, []);
+
+  const advance = useCallback(() => {
+    pending.current = null;
+    setAlgorithm("");
+    setLoading(false);
+    setError("");
+    setIndex((current) => current === index ? current + 1 : current);
+  }, [index]);
+
+  function rewind() {
+    setError("");
+    setIndex((current) => current - 1);
   }
 
-  useLayoutEffect(() => clearAnimation, []);
-  useLayoutEffect(() => {
-    if (!moving) clearAnimation();
-  }, [moving]);
-
-  async function step(delta: -1 | 1) {
-    const next = index + delta;
-    const net = host.current;
-    if (active.current || !frames[next] || !net) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setIndex(next);
-      return;
-    }
-    const tiles = new Map(
-      [...net.querySelectorAll<HTMLElement>("[data-sticker]")].map((tile) => [tile.dataset.sticker, tile]),
-    );
-    const moves = frames[Math.max(index, next)].transfers.flatMap(({ from, to }) => {
-      const start = tiles.get(delta === 1 ? from : to);
-      const end = tiles.get(delta === 1 ? to : from);
-      return start && end ? [{ start, end }] : [];
-    });
-    if (!moves.length) {
-      setIndex(next);
+  function play() {
+    if (!next || busy) return;
+    onView("3d");
+    setError("");
+    if (next.algorithm) {
+      setAlgorithm(next.algorithm);
       return;
     }
 
-    const easing = getComputedStyle(net).getPropertyValue("--ease-settle").trim();
-    const animation = view === "3d" ? animateCube(moves, easing) : animateNet(net, moves, easing);
-    active.current = animation;
-    setMoving(true);
-    await Promise.allSettled(animation.animations.map((item) => item.finished));
-    if (active.current !== animation) return;
+    const moves = next.moves ?? [];
+    const targets = previewCommutatorTargets(options, moves);
+    setLoading(true);
+    const id = ++request.current;
+    pending.current = { id, finishEmpty: advance };
 
-    setIndex(next);
-    setMoving(false);
+    if (!targets) {
+      // The cubing.js solver launches its own worker for parity and orientation.
+      void previewStepAlgorithm(options, moves).then(
+        (execution) => receive(id, execution),
+        (failure: unknown) => receive(id, undefined, failure instanceof Error ? failure.message : "交換手順を生成できませんでした。"),
+      );
+      return;
+    }
+    try {
+      if (!worker.current) {
+        const instance = new Worker(new URL("../lib/bldCommutator.worker.ts", import.meta.url), { type: "module" });
+        instance.onmessage = ({ data }) => receive(data.id, data.result?.execution, data.error);
+        instance.onerror = () => {
+          instance.terminate();
+          worker.current = null;
+          const current = pending.current;
+          if (current) receive(current.id, undefined, "交換手順を読み込めませんでした。");
+        };
+        worker.current = instance;
+      }
+      worker.current.postMessage({ id, ...targets });
+    } catch {
+      receive(id, undefined, "交換手順を読み込めませんでした。");
+    }
+  }
+
+  function receive(id: number, execution?: string, error?: string) {
+    const current = pending.current;
+    if (!current || current.id !== id) return;
+    pending.current = null;
+    setLoading(false);
+    if (error) setError(error);
+    else if (execution) setAlgorithm(execution);
+    else current.finishEmpty();
   }
 
   const previous = steps[index - 1];
-  const next = steps[index];
   const upcoming = next ?? previous;
   return (
     <div className="bld-section bld-swap-preview">
-      <div className="bld-swap-net" ref={host}>
-        <BldCubeNet view={view} frame={frames[index]} orbit={upcoming?.orbit} />
-      </div>
       <div className="bld-section bld-swap-controls">
-        <BldCubeViewToggle view={view} onChange={onView}
-          views={["net", "3d"]} disabled={moving} />
+        <BldCubeViewToggle view={view} onChange={onView} views={["net", "3d"]} disabled={busy} />
         <div className="bld-review-controls">
-          <button type="button" disabled={moving || index === 0} onClick={() => void step(-1)}>前へ</button>
+          <button type="button" disabled={busy || index === 0} onClick={rewind}>前の交換</button>
           <p role="status">{index} / {steps.length}{previous && <small>{previous.label}</small>}</p>
-          <button type="button" disabled={moving || !next} onClick={() => void step(1)}>次の交換</button>
+          <button type="button" disabled={!next} onClick={advance}>スキップ</button>
         </div>
         {upcoming && <div className="bld-next-step">
-          <p>{next ? "次の手順" : "最後の手順"} · {upcoming.label}</p>
-          {upcoming.algorithm && <code translate="no">{upcoming.algorithm}</code>}
+          <p>{next ? "次の交換" : "最後の交換"} · {upcoming.label}</p>
+          {(algorithm || upcoming.algorithm) && <code translate="no">{algorithm || upcoming.algorithm}</code>}
         </div>}
+        <button type="button" className="primary" disabled={busy || !next} onClick={play}>
+          {loading ? "手順を生成中…" : algorithm ? "再生中…" : "この交換を再生"}
+        </button>
+        {error && <p role="alert">{error}</p>}
       </div>
+      {view === "3d" ? (
+        <BldPlaybackCube pattern={frames[index].pattern} algorithm={algorithm} top="white"
+          label="交換手順の3D再生" onFinish={advance} />
+      ) : <BldCubeNet frame={frames[index]} orbit={upcoming?.orbit} />}
     </div>
   );
 }

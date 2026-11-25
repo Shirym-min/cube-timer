@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { Alg } from "cubing/alg";
-import { puzzles } from "cubing/puzzles";
 import { TwistyPlayer } from "cubing/twisty";
-import { recallFaces, topColors, upperNeighbors, upperSlotPair, type RecallFaces, type TopColor } from "../lib/recallFaces";
+import { recallFaces, upperNeighbors, upperSlotPair, type RecallFaces, type TopColor } from "../lib/recallFaces";
+import { applyRecallCubeColors, type CubeMaterial } from "../lib/recallCubeColors";
 type View = "3d" | "top" | "net";
 export type RecallMask = "orientation" | "corners" | "last-slot" | "slot-orientation";
 export const recallMasks: Partial<Record<string, RecallMask>> = {
@@ -38,22 +38,6 @@ function topStickerPath(x: number, y: number, row: number, column: number) {
   ].join(" ");
 }
 
-type Material = {
-  clone: () => Material;
-  color: { set: (value: number) => void };
-  dispose: () => void;
-};
-type CubeObject = {
-  kpuzzleFaceletInfo: Record<
-    string,
-    {
-      faceIdx: number;
-      facelet: { material: Material };
-      hintFacelet?: { material: Material };
-    }[][]
-  >;
-  scheduleRenderCallback: () => void;
-};
 export function RecallCube({
   alg,
   auf,
@@ -98,7 +82,7 @@ export function RecallCube({
     if (view !== "3d" || !host.current) return;
     setError(false);
     let active = true;
-    const cloned: Material[] = [];
+    const cloned: CubeMaterial[] = [];
     const player = new TwistyPlayer({
       puzzle: "3x3x3",
       alg: `${new Alg(alg).invert()} ${auf}`,
@@ -111,27 +95,7 @@ export function RecallCube({
     host.current.replaceChildren(player);
     void (async () => {
       try {
-        const cube = await puzzles["3x3x3"].kpuzzle();
-        const rotation = topColors.find((c) => c[0] === top)![2];
-        const centers = cube.defaultPattern().applyAlg(rotation).patternData
-          .CENTERS.pieces;
-        const palette = [
-          0xffffff, 0xff9900, 0x00ff00, 0xff0000, 0x2266ff, 0xffff00,
-        ];
-        const object =
-          (await player.experimentalCurrentThreeJSPuzzleObject()) as unknown as CubeObject;
-        if (!active) return;
-        for (const pieces of Object.values(object.kpuzzleFaceletInfo))
-          for (const piece of pieces)
-            for (const sticker of piece)
-              for (const mesh of [sticker.facelet, sticker.hintFacelet])
-                if (mesh) {
-                  const material = mesh.material.clone();
-                  material.color.set(palette[centers[sticker.faceIdx]]);
-                  mesh.material = material;
-                  cloned.push(material);
-                }
-        object.scheduleRenderCallback();
+        await applyRecallCubeColors(player, top, () => active, cloned);
       } catch {
         if (active) setError(true);
       }

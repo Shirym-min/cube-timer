@@ -17,12 +17,14 @@ export function BldHighlightCube({ highlights }: { highlights: Highlight[] }) {
       visualization: "3D",
       background: "none",
       controlPanel: "none",
+      viewerLink: "none",
       hintFacelets: "none",
       cameraLatitude: initialView.latitude,
       cameraLongitude: initialView.longitude,
       cameraLatitudeLimit: 89,
     });
     player.timestamp = "end";
+    setError(false);
     playerRef.current = player;
     host.current?.replaceChildren(player);
     let active = true;
@@ -32,6 +34,7 @@ export function BldHighlightCube({ highlights }: { highlights: Highlight[] }) {
     return () => {
       active = false;
       playerRef.current = null;
+      player.pause();
       player.remove();
     };
   }, []);
@@ -57,6 +60,7 @@ export function BldHighlightCube({ highlights }: { highlights: Highlight[] }) {
   }
 
   async function rotateWithKeys(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
     const offset = { ArrowLeft: [0, -20], ArrowRight: [0, 20], ArrowUp: [15, 0], ArrowDown: [-15, 0] }[event.key];
     const player = playerRef.current;
     if (!offset || !player) return;
