@@ -89,7 +89,7 @@ export function BldCommutator() {
               setStatus("手順をコピーできませんでした。");
             }
           }}>手順をコピー</button>
-          <BldPlaybackCube algorithm={result.execution} top="yellow" label="コミュテーターの3D再生" />
+          <BldPlaybackCube algorithm={result.execution} top="white" label="コミュテーターの3D再生" />
         </div>
       )}
       {status && <p role="status">{status}</p>}
