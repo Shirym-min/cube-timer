@@ -49,12 +49,13 @@
   .scramble-refresh[data-generating] .scramble-refresh-icon { transform: rotate(-35deg); }
   .scramble-text.loading .scramble-sequence,
   .scramble-outgoing {
-    transform: perspective(480px) translateY(-8px) translateZ(-42px) rotateX(46deg);
+    transform: perspective(480px) translateX(-24px) translateZ(-42px) rotateY(-20deg);
     filter: blur(2px);
   }
   @starting-style {
     .scramble-text:not(.loading) .scramble-sequence {
-      transform: perspective(480px) translateY(11px) translateZ(-12px) rotateX(-22deg);
+      transform: perspective(480px) translateX(24px) translateZ(-42px) rotateY(20deg);
+      filter: blur(2px);
     }
     .last-actions, .hint-preview { transform: translateY(4px); }
   }
@@ -107,4 +108,16 @@
     font-variant-numeric: tabular-nums;
   }
   .focus-mode .mobile-timer .mobile-quick-stats { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scramble-row[data-direction="previous"] .scramble-outgoing {
+    transform: perspective(480px) translateX(24px) translateZ(-42px) rotateY(20deg);
+  }
+  @starting-style {
+    .scramble-row[data-direction="previous"] .scramble-text:not(.loading) .scramble-sequence {
+      transform: perspective(480px) translateX(-24px) translateZ(-42px) rotateY(-20deg);
+      filter: blur(2px);
+    }
+  }
 }

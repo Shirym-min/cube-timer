@@ -163,7 +163,7 @@ export default function App() {
 
   return (
     <div
-      className={`app ${focus ? "focus-mode" : ""} ${timer.phase === "running" ? "is-running" : ""}`}
+      className={`app ${focus ? "focus-mode" : ""} ${timer.phase === "running" || timer.phase === "inspection" ? "is-running" : ""}`}
       onClickCapture={(e) =>
         e.currentTarget.toggleAttribute("data-pointer-motion", e.detail > 0)
       }

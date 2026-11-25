@@ -112,17 +112,19 @@ export function useTimer(
         "input,textarea,select,button,a,dialog,[contenteditable=true]",
       );
     const keydown = (e: KeyboardEvent) => {
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.code === "Space" && !editable(e.target)) {
+        e.preventDefault();
+        if (!e.repeat) actions.current.down();
+        return;
+      }
+      if (e.repeat) return;
       if (e.code === "Escape") {
         if (r.current.phase === "running") {
           e.preventDefault();
           actions.current.finish(true);
         } else if (!r.current.inspecting) actions.current.reset();
         return;
-      }
-      if (e.code === "Space" && !editable(e.target)) {
-        e.preventDefault();
-        actions.current.down();
       }
     };
     const keyup = (e: KeyboardEvent) => {

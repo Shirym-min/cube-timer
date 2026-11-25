@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import { ChevronUp, MoreHorizontal } from "lucide-react";
 import { formatResult, type Settings, type Solve } from "../../lib/model";
 
@@ -18,6 +18,8 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
   const actionsId = useId();
   const sheet = useRef<HTMLDivElement>(null);
   const handle = useRef<HTMLButtonElement>(null);
+  const plusTwoButton = useRef<HTMLButtonElement>(null);
+  const dnfButton = useRef<HTMLButtonElement>(null);
   const suppressClick = useRef(false);
   const gesture = useRef<{
     id: number;
@@ -30,6 +32,25 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
     velocity: number;
     vertical: boolean;
   } | null>(null);
+
+  useEffect(() => {
+    const desktop = matchMedia("(min-width: 761px) and (hover: hover) and (pointer: fine)");
+    function applyPenaltyShortcut(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.repeat || event.isComposing ||
+        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+
+      const key = event.key.toLowerCase();
+      const button = key === "p" ? plusTwoButton.current : key === "d" ? dnfButton.current : null;
+      if (!button || !desktop.matches || document.querySelector("dialog[open], :popover-open")) return;
+      if (event.target instanceof HTMLElement &&
+        (event.target.isContentEditable || event.target.closest("input, textarea, select"))) return;
+
+      event.preventDefault();
+      button.click();
+    }
+    window.addEventListener("keydown", applyPenaltyShortcut);
+    return () => window.removeEventListener("keydown", applyPenaltyShortcut);
+  }, []);
 
   function setExpanded(next: boolean) {
     setOpen(next);
@@ -154,21 +175,23 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
             <>
               {timed && (
                 <button
+                  ref={plusTwoButton}
                   type="button"
                   className={solve.penalty === "+2" ? "selected" : ""}
                   aria-pressed={solve.penalty === "+2"}
                   onClick={() => void patch(solve, { penalty: solve.penalty === "+2" ? "OK" : "+2" })}
                 >
-                  +2
+                  +2 <kbd className="shortcut-hint" aria-hidden="true">P</kbd>
                 </button>
               )}
               <button
+                ref={dnfButton}
                 type="button"
                 className={solve.penalty === "DNF" ? "selected" : ""}
                 aria-pressed={solve.penalty === "DNF"}
                 onClick={() => void patch(solve, { penalty: solve.penalty === "DNF" ? "OK" : "DNF" })}
               >
-                DNF
+                DNF <kbd className="shortcut-hint" aria-hidden="true">D</kbd>
               </button>
               <button type="button" aria-label="直前の記録を編集" onClick={() => edit(solve)}>
                 <MoreHorizontal size={16} />

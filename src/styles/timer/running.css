@@ -1,6 +1,7 @@
 /* The running timer stays interactive while its surrounding workspace recedes. */
 .timer-touch { transition: transform var(--motion-panel) var(--ease-out); }
-.timer-stage.running .timer-touch { position: relative; z-index: 8; transform: translate(var(--timer-shift-x, 0), var(--timer-shift-y, 0)); }
+.timer-stage.running .timer-touch,
+.timer-stage.inspecting .timer-touch { position: relative; z-index: 8; transform: translate(var(--timer-shift-x, 0), var(--timer-shift-y, 0)); }
 .app .rail, .app .topbar, .app .mobile-tabs, .app .scramble-panel,
 .app .records-pane, .app .trend-panel, .app .mobile-quick-stats, .app .app-footer,
 .timer-stage .timer-status, .timer-stage .quick-stats, .timer-stage .timer-tools {

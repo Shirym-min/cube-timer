@@ -19,6 +19,10 @@ export function useTimerSession(
   const [pending, setPending] = useState<Solve | null>(null);
   const [timerPhase, setTimerPhase] = useState<Phase>("idle");
   const generation = useRef(0);
+  const history = useRef<string[][]>([]);
+  const historyIndex = useRef(-1);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [direction, setDirection] = useState<"next" | "previous">("next");
   const scramble = scrambles[multiIndex] ?? "";
   const allScrambles = scrambles.join("\n");
   const timed = !["333fm", "333mbf"].includes(event);
@@ -36,10 +40,14 @@ export function useTimerSession(
             await randomScrambleForEvent(event === "333mbf" ? "333bf" : event)
           ).toString(),
         );
-      if (run === generation.current) setScrambles(out);
+      if (run === generation.current) {
+        history.current = [...history.current.slice(0, historyIndex.current + 1), out];
+        historyIndex.current = history.current.length - 1;
+        setCanGoBack(historyIndex.current > 0);
+        setScrambles(out);
+      }
     } catch {
       if (run === generation.current) {
-        setScrambles([]);
         setScrambleError(
           "スクランブルを生成できませんでした。再試行してください。",
         );
@@ -48,6 +56,29 @@ export function useTimerSession(
       if (run === generation.current) setScrambleBusy(false);
     }
   }, [event, multiCount]);
+  const previous = useCallback(() => {
+    if (historyIndex.current <= 0) return;
+    historyIndex.current--;
+    setDirection("previous");
+    setScrambles(history.current[historyIndex.current]);
+    setMultiIndex(0);
+    setCanGoBack(historyIndex.current > 0);
+    setScrambleError("");
+  }, []);
+
+  const next = useCallback(async () => {
+    setDirection("next");
+    if (historyIndex.current < history.current.length - 1) {
+      historyIndex.current++;
+      setScrambles(history.current[historyIndex.current]);
+      setCanGoBack(historyIndex.current > 0);
+      setMultiIndex(0);
+      setScrambleError("");
+    } else {
+      await generate();
+    }
+  }, [generate]);
+
   function newSolve(ms: number, penalty: Penalty, splits: number[]): Solve {
     return {
       id: crypto.randomUUID(),
@@ -64,7 +95,7 @@ export function useTimerSession(
   async function persistSolve(s: Solve) {
     await commit("solve", s.id, s);
     setPending(null);
-    void generate();
+    void next();
   }
   function finish(ms: number, penalty: Penalty, splits: number[]) {
     if (!session) return;
@@ -78,6 +109,10 @@ export function useTimerSession(
   }
   useEffect(() => {
     setTimerPhase("idle");
+    history.current = [];
+    historyIndex.current = -1;
+    setCanGoBack(false);
+    setDirection("next");
     setScrambles([]);
     void generate();
     return () => {
@@ -105,7 +140,7 @@ export function useTimerSession(
   return {
     scramble: {
       scramble, scrambleBusy, scrambleError, scrambles,
-      multiCount, multiIndex, setMultiCount, setMultiIndex, generate, copyScramble,
+      multiCount, multiIndex, setMultiCount, setMultiIndex, generate: next, previous, canGoBack, direction, copyScramble,
     },
     phase: timerPhase,
     setTimerPhase,

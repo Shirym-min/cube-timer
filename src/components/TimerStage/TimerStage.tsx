@@ -61,7 +61,7 @@ export function TimerStage({
   const running = timer.phase === "running";
   useLayoutEffect(() => {
     const element = touchRef.current;
-    if (!element || timer.phase !== "running") return;
+    if (!element || (timer.phase !== "running" && !timer.inspecting)) return;
     const position = () => {
       const rect = element.getBoundingClientRect();
       const transform = new DOMMatrixReadOnly(getComputedStyle(element).transform);
@@ -73,11 +73,11 @@ export function TimerStage({
     position();
     window.addEventListener('resize', position);
     return () => { window.removeEventListener('resize', position); };
-  }, [timer.phase]);
+  }, [timer.phase, timer.inspecting]);
   useLayoutEffect(() => {
     if (timer.phase === "stopped") surfacePress.current = null;
-    onPhase(timer.phase);
-  }, [timer.phase, onPhase]);
+    onPhase(timer.inspecting ? "inspection" : timer.phase);
+  }, [timer.phase, timer.inspecting, onPhase]);
   const precision = settings.precision,
     timed = !["333fm", "333mbf"].includes(event);
   const statsFormat = (n: number | null) =>
@@ -144,7 +144,7 @@ export function TimerStage({
 
   return (
     <>
-      <section className={`timer-stage ${timer.phase}`} aria-label="タイマー">
+      <section className={`timer-stage ${timer.phase} ${timer.inspecting ? "inspecting" : ""}`} aria-label="タイマー">
         {(enabled || running) && (
           <div
             className={running ? "timer-stop-surface" : "timer-start-surface"}

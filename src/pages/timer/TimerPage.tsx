@@ -1,8 +1,8 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Box } from "lucide-react";
 import { Chart } from "../../components/Chart/Chart";
 import { SolveForm } from "../../components/SolveForm/SolveForm";
 import { TimerStage } from "../../components/TimerStage/TimerStage";
-import type { EventId, Session, Settings, Solve } from "../../lib/model";
+import { EVENTS, type EventId, type Session, type Settings, type Solve } from "../../lib/model";
 import { pageURL, type FollowPage } from "../../navigation";
 import type { Statistics } from "../stats/useStatistics";
 import { RecordsPane } from "../../components/RecordsPane/RecordsPane";
@@ -65,6 +65,14 @@ export function TimerPage({
         >
           記録 <span>{solves.length}</span>
         </button>
+        <div className="event-selector mobile-event-selector">
+          <Box size={17} aria-hidden="true" />
+          <label className="sr-only" htmlFor="mobile-event">種目</label>
+          <select id="mobile-event" value={event} disabled={locked}
+            onChange={(e) => void changeEvent(e.target.value as EventId)}>
+            {EVENTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          </select>
+        </div>
       </div>
       <main id="main-content" tabIndex={-1} className={`timer-layout mobile-${mobileTab}`}>
         <h1 className="sr-only">タイマー</h1>

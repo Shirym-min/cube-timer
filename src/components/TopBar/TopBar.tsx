@@ -28,6 +28,9 @@ export function TopBar({
         )}
       </div>
       <div className="topbar-actions">
+        <a className="privacy-link" href={`${import.meta.env.BASE_URL}privacy.html`}>
+          プライバシー
+        </a>
         {hasDrive && page !== "video" && (
           <button
             className="account-button"
