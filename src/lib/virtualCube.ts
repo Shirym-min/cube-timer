@@ -88,6 +88,48 @@ export function pickCubeFace(camera: CubeCamera, bounds: DOMRect, point: Point):
 
 const layerMoves = [["L", "M", "R"], ["D", "E", "U"], ["B", "S", "F"]] as const;
 
+const moveAxes: Record<string, [axis: number, side: number]> = {
+  L: [0, -1], R: [0, 1], D: [1, -1], U: [1, 1], B: [2, -1], F: [2, 1],
+  M: [0, -1], E: [1, -1], S: [2, 1], x: [0, 1], y: [1, 1], z: [2, 1],
+};
+
+// Match the camera to the nearest right-handed cube orientation, so a
+// diagonal view still has one consistent right, up and front.
+export function viewedCubeMove(move: string, latitude: number, longitude: number) {
+  const pitch = latitude * Math.PI / 180;
+  const yaw = longitude * Math.PI / 180;
+  const up: Vector = [-Math.sin(pitch) * Math.sin(yaw), Math.cos(pitch), -Math.sin(pitch) * Math.cos(yaw)];
+  const front: Vector = [Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw)];
+  let best = -Infinity;
+  let orientation = [1, 2, 3];
+  for (const upAxis of axes) {
+    for (const frontAxis of axes) {
+      if (upAxis === frontAxis) continue;
+      const rightAxis = 3 - upAxis - frontAxis;
+      const upSign = up[upAxis] < 0 ? -1 : 1;
+      const frontSign = front[frontAxis] < 0 ? -1 : 1;
+      const rightSign = upSign * frontSign * ((upAxis + 1) % 3 === frontAxis ? 1 : -1);
+      const right = [Math.cos(yaw), 0, -Math.sin(yaw)][rightAxis];
+      const score = upSign * up[upAxis] + frontSign * front[frontAxis] + rightSign * right;
+      if (score > best) {
+        best = score;
+        orientation = [rightSign * (rightAxis + 1), upSign * (upAxis + 1), frontSign * (frontAxis + 1)];
+      }
+    }
+  }
+
+  const [relativeAxis, side] = moveAxes[move[0]];
+  const mappedAxis = orientation[relativeAxis];
+  const axis = Math.abs(mappedAxis) - 1;
+  const mappedSide = Math.sign(mappedAxis) * side;
+  const slice = "MES".includes(move[0]);
+  const rotation = "xyz".includes(move[0]);
+  const mapped = rotation ? "xyz"[axis] : layerMoves[axis][slice ? 1 : mappedSide > 0 ? 2 : 0];
+  const reversed = (slice || rotation) && mappedSide !== moveAxes[mapped][1];
+  const suffix = move.endsWith("'") !== reversed ? "'" : "";
+  return mapped + (move.includes("w") ? "w" : "") + suffix;
+}
+
 export function swipeCubeMove(
   camera: CubeCamera, bounds: DOMRect, hit: CubeHit, start: Point, end: Point,
 ) {

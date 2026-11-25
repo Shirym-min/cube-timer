@@ -3,7 +3,7 @@ import { ArrowLeft, RotateCcw, Shuffle } from "lucide-react";
 import { cube3x3x3 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
 import { TwistyPlayer } from "cubing/twisty";
-import { cubeKeyRows, keyboardCubeMove, pickCubeFace, swipeCubeMove, type CubeCamera, type CubeHit } from "../lib/virtualCube";
+import { cubeKeyRows, keyboardCubeMove, viewedCubeMove, pickCubeFace, swipeCubeMove, type CubeCamera, type CubeHit } from "../lib/virtualCube";
 import "./VirtualCube.css";
 
 type CubeControls = {
@@ -23,8 +23,20 @@ type Gesture = {
 };
 
 const initialView = { latitude: 35, longitude: 30 };
-const sides = [["U", "L", "F"], ["R", "D", "B"]] as const;
-const faces = { U: "上面", L: "左面", F: "前面", R: "右面", D: "下面", B: "背面" };
+// The first row puts the index-finger U flick and the common R/F turns
+// nearest the thumbs. Each hand gets the complementary turn directions.
+const pads = [
+  [
+    ["R'", "F'", "U'"], ["L", "B'", "D"],
+    ["Lw", "Fw'", "Uw'"], ["Rw'", "Bw'", "Dw"],
+    ["M'", "E", "S'"], ["x'", "y'", "z'"],
+  ],
+  [
+    ["U", "F", "R"], ["D'", "B", "L'"],
+    ["Uw", "Fw", "Rw"], ["Dw'", "Bw", "Lw'"],
+    ["M", "E'", "S"], ["x", "y", "z"],
+  ],
+];
 
 export function VirtualCube({ backURL, onBack }: {
   backURL: string;
@@ -141,7 +153,7 @@ export function VirtualCube({ backURL, onBack }: {
       const move = keyboardCubeMove(event.code, left, right);
       if (move) {
         event.preventDefault();
-        controls.current.turn(move);
+        controls.current.turn(viewedCubeMove(move, view.current.latitude, view.current.longitude));
         return;
       }
       switch (event.code) {
@@ -240,18 +252,20 @@ export function VirtualCube({ backURL, onBack }: {
               onLostPointerCapture={() => { gesture.current = null; }} />
             {!ready && !error && <p className="virtual-cube-loading" role="status">読み込み中…</p>}
           </div>
-          {sides.map((group, index) => (
-            <div key={group[0]} className={`virtual-cube-pad ${index === 0 ? "pad-left" : "pad-right"}`}
-              role="group" aria-label={index === 0 ? "左側の回転ボタン" : "右側の回転ボタン"}>
-              {group.flatMap((face) => (["", "'", "2"] as const).map((suffix) => (
-                <button key={face + suffix} type="button" disabled={disabled}
-                  aria-label={`${face}${suffix}　${faces[face]}${suffix === "'" ? "を反時計回り" : suffix === "2" ? "を180度回転" : "を時計回り"}`}
-                  onClick={() => controls.current?.turn(face + suffix)}>{face + (suffix === "'" ? "′" : suffix)}</button>
+          {pads.map((rows, index) => (
+            <div key={rows[0][0]} className={`virtual-cube-pad ${index === 0 ? "pad-left" : "pad-right"}`}
+              role="group" aria-label={index === 0 ? "左手の回転ボタン" : "右手の回転ボタン"}>
+              {rows.flatMap((row, rowIndex) => row.map((move) => (
+                <button key={move} type="button" disabled={disabled}
+                  className={rowIndex === 0 ? "virtual-cube-primary-turn" : undefined}
+                  onClick={() => controls.current?.turn(viewedCubeMove(move, view.current.latitude, view.current.longitude))}>
+                  {move.replace("'", "′")}
+                </button>
               )))}
             </div>
           ))}
         </div>
-        <p className="virtual-cube-gesture muted">ステッカーをスワイプすると層が回ります。背景をドラッグすると視点が変わります。</p>
+        <p className="virtual-cube-gesture muted">ステッカーをスワイプすると層が回ります。背景をドラッグすると視点が変わり、キーとボタンもその向きに対応します。</p>
         <details className="virtual-cube-keyboard">
           <summary>csTimer のキー配置</summary>
           <p className="muted">3 / 4 で左手側、7 / 8 で右手側の回転幅を変更し、Space で戻します。</p>

@@ -65,6 +65,12 @@
   font-family: var(--mono);
   font-weight: 600;
 }
+.virtual-cube-pad button.virtual-cube-primary-turn {
+  min-height: 51px;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  font-size: 17px;
+}
 .virtual-cube-pad button:active {
   color: var(--accent-ink);
   background: var(--accent-soft);
@@ -91,11 +97,14 @@
 .virtual-cube-keyboard dd { margin: 0; }
 @media (orientation: landscape) {
   .virtual-cube-board {
-    grid-template-columns: minmax(90px, 1fr) minmax(130px, 3fr) minmax(90px, 1fr);
+    grid-template-columns: minmax(114px, 1fr) minmax(118px, 2.5fr) minmax(114px, 1fr);
     grid-template-areas: "left cube right";
   }
 }
 @media (orientation: landscape) and (max-height: 540px) {
   .virtual-cube-tool { gap: 8px; }
-  .virtual-cube-player { height: clamp(140px, 48dvh, 250px); }
+  .virtual-cube-player { height: clamp(150px, 48dvh, 250px); }
+  .virtual-cube-pad { gap: 3px; }
+  .virtual-cube-pad button { min-height: 38px; }
+  .virtual-cube-pad button.virtual-cube-primary-turn { min-height: 44px; }
 }
