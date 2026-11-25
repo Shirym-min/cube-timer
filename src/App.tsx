@@ -23,6 +23,7 @@ import {
   GraduationCap,
   BookOpen,
   Film,
+  Wrench,
 } from "lucide-react";
 import { useStore } from "./lib/useStore";
 import { TimerStage } from "./components/TimerStage";
@@ -64,6 +65,7 @@ const RecallTrainer = lazy(() =>
   })),
 );
 const BldTrainer = lazy(() => import("./components/BldTrainer").then((m) => ({ default: m.BldTrainer })));
+const VirtualCube = lazy(() => import("./components/VirtualCube").then((m) => ({ default: m.VirtualCube })));
 const SolveVideo = lazy(() =>
   import("./components/SolveVideo").then((m) => ({ default: m.SolveVideo })),
 );
@@ -72,7 +74,7 @@ const AlgorithmLibrary = lazy(() =>
 );
 type ModalKind =
   "settings" | "account" | "manual" | "help" | "newSession" | null;
-const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide"] as const;
+const pages = ["timer", "stats", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide", "virtual"] as const;
 type Page = (typeof pages)[number];
 
 function pageFromURL(): Page {
@@ -301,6 +303,7 @@ export default function App() {
     const keydown = (e: KeyboardEvent) => {
       if (
         e.repeat ||
+        page === "virtual" ||
         e.ctrlKey ||
         e.metaKey ||
         e.altKey ||
@@ -443,7 +446,7 @@ export default function App() {
               ["timer", "タイマー", Timer],
               ["stats", "統計", ChartNoAxesCombined],
               ["sessions", "セッション", Layers],
-              ["practice", "練習", GraduationCap],
+              ["practice", "ツール", Wrench],
             ] as const
           ).map(([key, label, Icon]) => (
             <a
@@ -453,12 +456,12 @@ export default function App() {
               aria-label={label}
               title={label}
               aria-current={
-                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide"].includes(page))
+                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
                   ? "page"
                   : undefined
               }
               className={
-                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide"].includes(page))
+                page === key || (key === "practice" && ["recall", "algorithms", "video", "bld", "bld-guide", "virtual"].includes(page))
                   ? "active"
                   : ""
               }
@@ -501,7 +504,8 @@ export default function App() {
                         : page === "algorithms"
                           ? "アルゴリズム集"
                           : page === "bld" ? "BLD トレーナー"
-                            : "練習"}
+                            : page === "virtual" ? "バーチャルキューブ"
+                              : "ツール"}
             </span>
             {(page === "timer" || page === "stats") && (
               <>
@@ -1152,9 +1156,15 @@ export default function App() {
         ) : page === "practice" ? (
           <main key="practice" id="main-content" tabIndex={-1} className="page-content practice-page">
             <header className="page-heading">
-              <h1>練習</h1>
+              <h1>ツール</h1>
             </header>
             <div className="practice-options">
+              <a className="action-link practice-item" href={pageURL("virtual")}
+                onClick={(e) => followPage(e, "virtual")}>
+                <span className="practice-icon"><Box size={23} /></span>
+                <span><strong>バーチャルキューブ</strong><small>キーやタッチで3×3を回す</small></span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
               <a
                 className="action-link practice-item"
                 href={pageURL("recall")}
@@ -1198,6 +1208,10 @@ export default function App() {
               </a>
             </div>
           </main>
+        ) : page === "virtual" ? (
+          <Suspense fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}>
+            <VirtualCube backURL={pageURL("practice")} onBack={(e) => followPage(e, "practice")} />
+          </Suspense>
         ) : page === "recall" ? (
           <Suspense
             fallback={<main id="main-content" tabIndex={-1} className="loading-screen">読み込み中…</main>}
@@ -1388,7 +1402,7 @@ export default function App() {
               </dd>
               <dt>ショートカット</dt>
               <dd>
-                1〜4でタイマー・統計・セッション・練習を開きます。タイマーではRでスクランブルを再生成し、Hでヒントを開閉します。Recall
+                1〜4でタイマー・統計・セッション・ツールを開きます。タイマーではRでスクランブルを再生成し、Hでヒントを開閉します。Recall
                 TrainerではSpaceで開始・一時停止、Nまたは右矢印で次のケース、Aで答えを表示・非表示にします。
               </dd>
               <dt>インスペクション</dt>

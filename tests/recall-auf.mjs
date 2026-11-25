@@ -9,7 +9,7 @@ for (const viewport of [
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   await p.goto("http://127.0.0.1:4173");
-  await p.getByRole("link", { name: "練習", exact: true }).click();
+  await p.getByRole("link", { name: "ツール", exact: true }).click();
   await p.getByRole("link", { name: /Recall Trainer/ }).click();
   await p.locator("twisty-player").waitFor();
   await p.waitForTimeout(1000);

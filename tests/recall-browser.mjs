@@ -9,7 +9,7 @@ for (const viewport of [
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:4173");
-  await page.getByRole("link", { name: "練習", exact: true }).click();
+  await page.getByRole("link", { name: "ツール", exact: true }).click();
   await page.getByRole("link", { name: /Recall Trainer/ }).click();
   await page.locator(".recall-cube twisty-player").waitFor();
   const mobile = viewport.width <= 760;

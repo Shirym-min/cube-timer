@@ -7,7 +7,7 @@ for (const viewport of [
 ]) {
   const p = await browser.newPage({ viewport });
   await p.goto("http://127.0.0.1:4173");
-  await p.getByRole("link", { name: "練習", exact: true }).click();
+  await p.getByRole("link", { name: "ツール", exact: true }).click();
   await p.getByRole("link", { name: /Recall Trainer/ }).click();
   if (viewport.width < 761) await p.getByRole("button", { name: "練習設定" }).click();
   const controls = viewport.width < 761 ? p.getByRole("dialog") : p.locator(".recall-controls-desktop");

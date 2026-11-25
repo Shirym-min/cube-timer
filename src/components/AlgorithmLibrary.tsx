@@ -217,8 +217,8 @@ export function AlgorithmLibrary({
   return (
     <main id="main-content" tabIndex={-1} className="page-content algorithm-library">
       <header className="algorithm-library-heading">
-        <a href={practiceURL} onClick={onBack} aria-label="練習に戻る">
-          <ArrowLeft size={16} aria-hidden="true" /><span>練習</span>
+        <a href={practiceURL} onClick={onBack} aria-label="ツールに戻る">
+          <ArrowLeft size={16} aria-hidden="true" /><span>ツール</span>
         </a>
         <h1>アルゴリズム集</h1>
       </header>
