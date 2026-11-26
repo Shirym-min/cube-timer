@@ -46,6 +46,7 @@ export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {
               onClick={(e) => followPage(e, key)}
             >
               <Icon size={19} />
+              <span className="tab-label" aria-hidden="true">{label}</span>
 
               <kbd className="shortcut-hint nav-shortcut" aria-hidden="true">{shortcut}</kbd>
             </a>
@@ -59,6 +60,7 @@ export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {
         </button>
         <button aria-label="設定" disabled={locked} onClick={openSettings}>
           <Settings2 size={19} />
+          <span className="tab-label" aria-hidden="true">設定</span>
 
         </button>
 

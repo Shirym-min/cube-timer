@@ -20,7 +20,6 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
   const handle = useRef<HTMLButtonElement>(null);
   const plusTwoButton = useRef<HTMLButtonElement>(null);
   const dnfButton = useRef<HTMLButtonElement>(null);
-  const suppressClick = useRef(false);
   const gesture = useRef<{
     id: number;
     x: number;
@@ -31,6 +30,7 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
     lastTime: number;
     velocity: number;
     vertical: boolean;
+    moved: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -71,8 +71,8 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
       lastTime: e.timeStamp,
       velocity: 0,
       vertical: false,
+      moved: false,
     };
-    suppressClick.current = false;
     panel.style.transform = `translateY(${offset}px)`;
     panel.toggleAttribute("data-tracking", true);
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -85,7 +85,7 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
     const dx = e.clientX - drag.x;
     if (!drag.vertical) {
       if (Math.hypot(dx, dy) < 8) return;
-      suppressClick.current = true;
+      drag.moved = true;
       if (Math.abs(dy) <= Math.abs(dx) * 1.25) return;
       drag.vertical = true;
       sheet.current.toggleAttribute("data-dragging", true);
@@ -110,6 +110,7 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
       const velocity = (e.timeStamp - drag.lastTime < 90 ? drag.velocity : 0) * (open ? 1 : -1);
       if (distance >= 24 || (distance >= 12 && velocity >= 0.55)) setExpanded(!open);
     }
+    if (!cancelled && !drag.moved) setExpanded(!open);
     sheet.current.removeAttribute("data-tracking");
     sheet.current.removeAttribute("data-dragging");
     sheet.current.style.removeProperty("transform");
@@ -142,8 +143,8 @@ export function LastSolveActions({ solve, precision, timed, patch, edit, remove 
           onLostPointerCapture={(e) => endDrag(e, true)}
           onContextMenu={(e) => e.preventDefault()}
           onClick={(e) => {
-            if (e.detail && suppressClick.current) return;
-            setExpanded(!open);
+            // Keyboard and assistive activation do not send pointer events.
+            if (e.detail === 0) setExpanded(!open);
           }}
         >
           <ChevronUp size={20} aria-hidden="true" />

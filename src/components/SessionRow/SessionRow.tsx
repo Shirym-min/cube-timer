@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, ChevronRight, Layers, Pencil, Trash2 } from "lucide-react";
 import { EVENTS, type Session } from "../../lib/model";
 
@@ -17,10 +17,18 @@ export function SessionRow({
   save: (s: Session) => Promise<void>;
   canDelete: boolean;
 }) {
+  const renameButton = useRef<HTMLButtonElement>(null);
+  const [busy, setBusy] = useState(false);
   const [rename, setRename] = useState(false),
     [name, setName] = useState(session.name),
     [confirm, setConfirm] = useState(false),
     [error, setError] = useState("");
+  function endRename() {
+    setRename(false);
+    setError("");
+    requestAnimationFrame(() => renameButton.current?.focus());
+  }
+
   return (
     <div className={`session-row ${current ? "current" : ""}`}>
       <button className="session-open" onClick={select}>
@@ -44,47 +52,59 @@ export function SessionRow({
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              if (!name.trim()) return;
+              if (!name.trim() || busy) return;
+              setBusy(true);
               try {
                 await save({ ...session, name: name.trim() });
-                setRename(false);
+                endRename();
               } catch {
                 setError("保存できません。");
+              } finally {
+                setBusy(false);
               }
             }}
           >
             <input
+              autoFocus
               aria-label="新しいセッション名"
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && !e.nativeEvent.isComposing && !busy) endRename();
+              }}
               value={name}
               maxLength={80}
               onChange={(e) => setName(e.target.value)}
             />
-            <button>保存</button>
+            <button disabled={busy || !name.trim()}>保存</button>
+            <button type="button" disabled={busy} onClick={endRename}>キャンセル</button>
           </form>
         ) : (
-          <button type="button" className="icon-button" aria-label="名前を変更" title="名前を変更"
-            onClick={() => setRename(true)}>
+          <button ref={renameButton} hidden={confirm} type="button" className="icon-button" aria-label="名前を変更" title="名前を変更"
+            onClick={() => { setName(session.name); setError(""); setRename(true); }}>
             <Pencil size={16} aria-hidden="true" />
           </button>
         )}
-        <button
+        {!rename && <button
           className="danger"
-          disabled={!canDelete}
+          disabled={!canDelete || busy}
           onClick={async () => {
             if (!confirm) {
               setConfirm(true);
               return;
             }
+            setBusy(true);
             try {
               await save({ ...session, deleted: true });
             } catch {
               setError("削除できません。");
+            } finally {
+              setBusy(false);
             }
           }}
         >
           <Trash2 size={15} />
           {confirm ? "セッションを削除する" : "削除"}
-        </button>
+        </button>}
+        {confirm && <button type="button" disabled={busy} onClick={() => { setConfirm(false); setError(""); }}>キャンセル</button>}
       </div>
       {confirm && (
         <p className="muted">

@@ -34,3 +34,15 @@
 @media (max-width: 760px) {
   .tool-page-header { margin-bottom: 14px; }
 }
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .tool-page-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-bottom: 8px;
+  }
+  .tool-page-heading { flex: 1 1 270px; align-items: center; }
+  .tool-page-heading h1 { font-size: 20px; }
+}

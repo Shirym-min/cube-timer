@@ -18,7 +18,7 @@
 
 @media (max-width: 760px) {
   .toast {
-    bottom: 85px;
+    bottom: calc(69px + env(safe-area-inset-bottom));
     font-size: 11px;
   }
 }

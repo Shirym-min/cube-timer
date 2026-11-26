@@ -83,3 +83,9 @@
   .topbar[data-page="timer"] .breadcrumb > :not(:first-child) { display: none; }
   .account-button { width: 44px; height: 44px; }
 }
+
+.mobile-help { display: none; }
+@media (max-width: 760px), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .mobile-help { display: inline-flex; }
+  .topbar-actions { gap: 0; }
+}

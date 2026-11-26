@@ -108,6 +108,7 @@ export function Settings({
           <label className="toggle-row" key={key}>
             <span>{label}</span>
             <input
+              role="switch"
               type="checkbox"
               checked={draft[key]}
               onChange={(e) => set(key, e.target.checked)}
@@ -215,9 +216,6 @@ export function Settings({
           Safariの共有メニューから「ホーム画面に追加」を選択してください。一度オンラインで開くと、オフラインでも計測できます。
         </p>
       </section>
-      <br />
-      <br />
-      <br />
       <section className="privacy">
         <a className="privacy-link" href={`${import.meta.env.BASE_URL}privacy.html`}>
           プライバシーポリシー

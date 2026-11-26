@@ -1,8 +1,8 @@
-import { ChevronRight, CircleUserRound, LogIn, RefreshCw } from "lucide-react";
+import { CircleHelp, ChevronRight, CircleUserRound, LogIn, RefreshCw } from "lucide-react";
 import { pageTitles, type Page } from "../../navigation";
 
 export function TopBar({
-  page, sessionName, locked, hasAccount, hasDrive, syncing, canSync, sync, openAccount,
+  page, sessionName, locked, hasAccount, hasDrive, syncing, canSync, sync, openAccount, openHelp,
 }: {
   page: Page;
   sessionName: string | undefined;
@@ -13,6 +13,7 @@ export function TopBar({
   canSync: boolean;
   sync: () => Promise<void>;
   openAccount: () => void;
+  openHelp: () => void;
 }) {
   const accountLabel = hasAccount || hasDrive ? "アカウント" : "ログイン";
   const syncLabel = syncing ? "同期中" : "同期";
@@ -30,6 +31,8 @@ export function TopBar({
         )}
       </div>
       <div className="topbar-actions">
+        <button className="icon-button account-button mobile-help" aria-label="操作ガイド"
+          onClick={openHelp} disabled={locked}><CircleHelp size={19} /></button>
         {hasDrive && page !== "video" && (
           <button
             type="button"

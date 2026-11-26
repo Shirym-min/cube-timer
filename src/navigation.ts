@@ -29,7 +29,7 @@ export const pageTitles: Record<Page, string> = {
   algorithms: "アルゴリズム集",
   video: "動画解析",
   bld: "BLD トレーナー",
-  "bld-guide": "BLD トレーナー",
+  "bld-guide": "BLD ガイド",
   virtual: "バーチャルキューブ",
 };
 

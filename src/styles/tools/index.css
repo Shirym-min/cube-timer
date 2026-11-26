@@ -32,3 +32,25 @@
   color: var(--accent-ink);
   border-radius: 9px;
 }
+
+@media (max-width: 760px) {
+  .practice-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+  .practice-item {
+    margin-inline: 12px;
+    padding: 12px 2px;
+    min-height: 64px;
+    border: 0;
+    border-radius: 0;
+    gap: 12px;
+  }
+  .practice-item + .practice-item { border-top: 1px solid var(--line); }
+  .practice-item > span:nth-child(2) { gap: 3px; }
+  .practice-icon { width: 38px; height: 38px; flex-shrink: 0; }
+  .practice-item > svg { color: var(--muted); flex-shrink: 0; }
+}

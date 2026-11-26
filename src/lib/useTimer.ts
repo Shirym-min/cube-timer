@@ -123,7 +123,10 @@ export function useTimer(
         if (r.current.phase === "running") {
           e.preventDefault();
           actions.current.finish(true);
-        } else if (!r.current.inspecting) actions.current.reset();
+        } else if (r.current.inspecting || r.current.phase === "ready" || r.current.phase === "holding") {
+          e.preventDefault();
+          actions.current.reset();
+        }
         return;
       }
     };

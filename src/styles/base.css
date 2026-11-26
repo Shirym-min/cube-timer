@@ -2,7 +2,7 @@
   font-family:
     system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  touch-action: pan-x pan-y;
+  touch-action: manipulation;
   color: #202b40;
   background: var(--surface);
   font-synthesis: none;

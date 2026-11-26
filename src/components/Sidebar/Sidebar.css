@@ -118,7 +118,7 @@
     justify-content: center;
     padding: 0 0 36px;
   }
-  .brand > span:last-child,
+  .brand > span:not(.brand-icon),
   .rail nav span,
   .rail-bottom > button span,
   .rail-caption {
@@ -252,4 +252,32 @@
     visibility: visible;
     transition: none;
   }
+}
+
+.tab-label { display: none; }
+
+@media (min-width: 761px) {
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 760px) and (orientation: portrait), (max-width: 760px) and (min-height: 541px) {
+  .rail { justify-content: stretch; }
+  .rail nav { flex: 4; gap: 0; }
+  .rail nav a, .rail-bottom > button:last-child {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 1px;
+    white-space: nowrap;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+}
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .app .rail .tab-label { display: none; }
+  .app .rail { overflow-y: auto; }
 }

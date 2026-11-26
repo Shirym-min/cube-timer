@@ -1,4 +1,4 @@
-import { BookOpen, Box, ChevronRight, Film, GraduationCap } from "lucide-react";
+import { BookOpen, Box, ScanEye, ChevronRight, Film, GraduationCap } from "lucide-react";
 import { pageURL, type FollowPage } from "../navigation";
 
 export function ToolsPage({ followPage }: { followPage: FollowPage }) {
@@ -33,7 +33,7 @@ export function ToolsPage({ followPage }: { followPage: FollowPage }) {
           href={pageURL("bld")}
           onClick={(e) => followPage(e, "bld")}
         >
-          <span className="practice-icon"><GraduationCap size={23} /></span>
+          <span className="practice-icon"><ScanEye size={23} /></span>
           <span><strong>BLD トレーナー</strong></span>
           <ChevronRight size={18} aria-hidden="true" />
         </a>

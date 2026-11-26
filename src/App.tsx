@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Check, X } from "lucide-react";
 import { AppDialogs, type AccountPanel, type ModalKind } from "./components/AppDialogs/AppDialogs";
 import { Sidebar } from "./components/Sidebar/Sidebar";
@@ -9,7 +9,7 @@ import { useSession } from "./lib/useSession";
 import { useStore } from "./lib/useStore";
 import { useTheme } from "./lib/useTheme";
 import { useToast } from "./lib/useToast";
-import { pageFromURL, type Page } from "./navigation";
+import { pageFromURL, pageTitles, type Page } from "./navigation";
 import { SessionsPage } from "./pages/SessionsPage";
 import { ToolPage } from "./pages/ToolPage";
 import { ToolsPage } from "./pages/ToolsPage";
@@ -46,11 +46,26 @@ export default function App() {
     }
   }, [account.recovery]);
 
+  const previousPage = useRef(page);
   useEffect(() => {
-    if (page === "stats-records") {
-      window.scrollTo({ top: 0, behavior: "instant" });
-      document.getElementById("main-content")?.focus();
-    }
+    document.title = `${pageTitles[page]} · SPLIT`;
+    if (previousPage.current === page) return;
+    previousPage.current = page;
+    const focusPage = () => {
+      const main = document.querySelector<HTMLElement>("main#main-content:not(.loading-screen)");
+      if (!main?.getClientRects().length) return false;
+      main.scrollTop = 0;
+      main.focus({ preventScroll: true });
+      return true;
+    };
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (focusPage()) return;
+    // Lazy-loaded tools replace the loading screen after the route changes.
+    const observer = new MutationObserver(() => {
+      if (focusPage()) observer.disconnect();
+    });
+    observer.observe(document.querySelector(".app-main")!, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [page]);
 
   const { toast, notify } = useToast();
@@ -179,7 +194,7 @@ export default function App() {
           page={page} sessionName={session?.name} locked={locked}
           hasAccount={!!account.user} hasDrive={!!store.driveUser}
           syncing={store.syncStatus === "同期中"} canSync={store.loaded}
-          sync={store.sync} openAccount={openAccount}
+          sync={store.sync} openAccount={openAccount} openHelp={() => setModal("help")}
         />
         {store.error && (modal !== "account" || accountPanel !== "drive") && (
           <div className="error-banner" role="alert">

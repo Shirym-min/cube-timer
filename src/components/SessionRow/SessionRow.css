@@ -73,3 +73,11 @@
     height: 44px;
   }
 }
+
+.session-row-actions [hidden] { display: none; }
+.session-row-actions { flex-wrap: wrap; }
+.session-row-actions form { flex: 1; flex-wrap: wrap; }
+.session-row-actions input { flex: 1 1 10em; }
+@media (pointer: coarse) {
+  .session-open, .session-row-actions button, .session-row-actions input { min-height: 44px; }
+}
