@@ -113,7 +113,7 @@ export function RecordsPane({
                       )}
                     </button>
                   </td>
-                  <td>
+                  <td data-label={timed ? "ao5" : "判定"}>
                     {timed
                       ? formatTime(
                           average(solves.slice(0, index), 5),

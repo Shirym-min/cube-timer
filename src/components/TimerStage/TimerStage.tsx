@@ -26,7 +26,7 @@ type Props = {
   best: number | null;
   focus: boolean;
   setFocus: (f: boolean) => void;
-  manualMode: () => void;
+  manualMode?: () => void;
 };
 export function TimerStage({
   settings,
@@ -175,10 +175,10 @@ export function TimerStage({
           />
         )}
         <div className="timer-tools">
-          <button type="button" className="icon-button timer-mode-button" aria-label="手入力" title="手入力"
+          {manualMode && <button type="button" className="icon-button timer-mode-button" aria-label="手入力" title="手入力"
             onClick={manualMode} disabled={!enabled || timer.active}>
             <Keyboard size={19} aria-hidden="true" />
-          </button>
+          </button>}
           <button
             className="icon-button"
             aria-label="集中表示"
@@ -190,7 +190,7 @@ export function TimerStage({
           </button>
         </div>
         <div className="timer-readout">
-          <span className="timer-status" aria-live="polite">{status}</span>
+          <span className="sr-only" aria-live="polite">{status}</span>
           <div
             className="timer-touch"
             ref={touchRef}

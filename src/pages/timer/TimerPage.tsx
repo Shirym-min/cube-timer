@@ -49,7 +49,7 @@ export function TimerPage({
   const latest = solves.at(-1);
   return (
     <>
-      <div className="mobile-tabs">
+      <div className="mobile-tabs timer-tabs">
         <button
           aria-label="計測"
           title="計測"

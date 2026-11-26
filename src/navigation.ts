@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 
-const pages = ["timer", "stats", "stats-records", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide", "virtual"] as const;
+const pages = ["timer", "stats", "stats-records", "sessions", "practice", "recall", "algorithms", "video", "bld", "bld-guide", "virtual", "algorithm-timer"] as const;
 export type Page = (typeof pages)[number];
 
 export function pageFromURL(): Page {
@@ -20,6 +20,7 @@ export function pageURL(page: Page) {
 export type FollowPage = (event: MouseEvent<HTMLAnchorElement>, page: Page) => void;
 
 export const pageTitles: Record<Page, string> = {
+  "algorithm-timer": "アルゴリズム計測",
   timer: "タイマー",
   stats: "統計",
   "stats-records": "統計の記録",
@@ -34,6 +35,6 @@ export const pageTitles: Record<Page, string> = {
 };
 
 export function isToolPage(page: Page) {
-  return page === "recall" || page === "algorithms" || page === "video" ||
+  return page === "algorithm-timer" || page === "recall" || page === "algorithms" || page === "video" ||
     page === "bld" || page === "bld-guide" || page === "virtual";
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Box, Check, X } from "lucide-react";
 import { AppDialogs, type AccountPanel, type ModalKind } from "./components/AppDialogs/AppDialogs";
 import { Sidebar } from "./components/Sidebar/Sidebar";
@@ -19,6 +19,8 @@ import { useStatistics } from "./pages/stats/useStatistics";
 import { TimerPage, type MobileTimerTab } from "./pages/timer/TimerPage";
 import { useTimerSession } from "./pages/timer/useTimerSession";
 import { usePageNavigation } from "./usePageNavigation";
+
+const AlgorithmTimer = lazy(() => import("./pages/algorithm-timer/AlgorithmTimer"));
 
 export default function App() {
   const account = useAuth();
@@ -128,6 +130,11 @@ export default function App() {
     }
 
     switch (page) {
+      case "algorithm-timer":
+        return <Suspense fallback={<main className="loading-screen">読み込み中…</main>}>
+          <AlgorithmTimer key={store.storageScope} store={store} timer={timer} blocked={blocked}
+            edit={setEditing} focus={focus} setFocus={setFocus} followPage={followPage} />
+        </Suspense>;
       case "timer":
         return (
           <TimerPage

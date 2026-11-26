@@ -29,6 +29,7 @@ export type Session = {
 export type Solve = {
   id: string;
   sessionId: string;
+  practice?: { algorithm: string; pattern: string };
   event: EventId;
   ms: number;
   penalty: Penalty;
@@ -203,6 +204,7 @@ export function validOperation(x: unknown): x is Operation {
     return (
       s.id === o.entityId &&
       id(s.sessionId) &&
+      (s.practice === undefined || (s.practice != null && id(s.practice.algorithm) && id(s.practice.pattern))) &&
       EVENTS.some((e) => e[0] === s.event) &&
       finite(s.ms) &&
       s.ms <= 86400000 &&

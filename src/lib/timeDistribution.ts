@@ -14,8 +14,14 @@ export function timeDistribution(values: readonly number[]) {
   };
 
   const spread = deviation ? 3 * deviation : Math.max(10, mean * 0.01);
-  const lower = Math.max(0, Math.min(sorted[0], mean - spread));
-  const upper = Math.max(sorted[count - 1], mean + spread);
+  const start = Math.max(0, Math.min(sorted[0], mean - spread));
+  const end = Math.max(sorted[count - 1], mean + spread);
+  const target = Math.max(100, (end - start) / 4);
+  const magnitude = 10 ** Math.floor(Math.log10(target));
+  const tickStep = ([1, 2, 5, 10].find(n => n * magnitude >= target) ?? 10) * magnitude;
+  const lower = Math.floor(start / tickStep) * tickStep;
+  const upper = Math.max(lower + tickStep, Math.ceil(end / tickStep) * tickStep);
+  const timeTicks = Array.from({ length: (upper - lower) / tickStep + 1 }, (_, i) => lower + i * tickStep);
   const binCount = Math.max(5, Math.min(16, Math.ceil(Math.sqrt(count))));
   const binWidth = (upper - lower) / binCount;
   const bins = Array<number>(binCount).fill(0);
@@ -31,7 +37,7 @@ export function timeDistribution(values: readonly number[]) {
   });
 
   return {
-    lower, upper, bins, curve, deviation,
+    lower, upper, timeTicks, bins, curve, deviation,
     q1: percentile(0.25),
     median: percentile(0.5),
     q3: percentile(0.75),

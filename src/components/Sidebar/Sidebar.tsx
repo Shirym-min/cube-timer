@@ -1,11 +1,11 @@
-import { Box, ChartNoAxesCombined, Keyboard, Layers, Settings2, Timer, Wrench } from "lucide-react";
+import { Box, ChartNoAxesCombined, Keyboard, Layers, Settings2, Timer, LayoutGrid } from "lucide-react";
 import { isToolPage, pageURL, type FollowPage, type Page } from "../../navigation";
 
 const destinations = [
   ["timer", "タイマー", Timer, "1"],
   ["stats", "統計", ChartNoAxesCombined, "2"],
   ["sessions", "セッション", Layers, "3"],
-  ["practice", "ツール", Wrench, "4"],
+  ["practice", "ツール", LayoutGrid, "4"],
 ] as const;
 
 export function Sidebar({ page, locked, followPage, openHelp, openSettings }: {

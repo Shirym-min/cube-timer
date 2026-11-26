@@ -1,0 +1,162 @@
+.algorithm-results,
+.algorithm-result-details { display: grid; gap: 14px; }
+.algorithm-results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.algorithm-results-heading h2 { font-size: 19px; }
+.algorithm-results-heading input { width: min(100%, 230px); min-height: 44px; }
+.algorithm-results-heading button { min-height: 44px; }
+.algorithm-result-details h3,
+.algorithm-result-details .panel-heading h2 { font-size: 15px; }
+.algorithm-result-details .stats-chart { margin: 0; }
+.algorithm-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.algorithm-summary > div {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 4px;
+}
+.algorithm-summary dt, .algorithm-history span { font-size: 12px; color: var(--muted); }
+.algorithm-summary dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.algorithm-history {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.algorithm-history button { flex-direction: column; min-height: 44px; }
+.practice-pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.practice-pattern-grid button {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 10px 5px;
+  gap: 5px;
+}
+.practice-pattern-thumbnail {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+}
+.practice-pattern-thumbnail svg.recall-flat { width: 100%; height: auto; }
+.practice-pattern-name { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.practice-pattern-grid strong { font: 600 15px var(--mono); margin-top: auto; }
+.practice-pattern-dialog-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.practice-pattern-dialog-intro .practice-pattern-thumbnail {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+.practice-pattern-dialog-intro button { min-height: 44px; }
+.practice-weakness {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.practice-weakness .panel-heading { flex-wrap: wrap; margin-bottom: 4px; }
+.practice-weakness p { font-size: 12px; }
+.practice-weakness details {
+  color: var(--muted);
+  font-size: 12px;
+}
+.practice-weakness summary {
+  padding-block: 10px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.practice-weakness ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.practice-weakness li { border-top: 1px solid var(--line); }
+.practice-weakness button {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  justify-content: space-between;
+  text-align: start;
+}
+.practice-weakness button > span {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 2px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.practice-weakness button svg { flex-shrink: 0; }
+.practice-pattern-empty { text-align: center; }
+.practice-records {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px 4px;
+}
+.practice-records .panel-heading { margin-bottom: 4px; }
+.practice-records table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  text-align: start;
+}
+.practice-records :is(th, td) {
+  border-bottom: 1px solid var(--line);
+  padding: 3px 6px;
+}
+.practice-records th { font-size: 12px; font-weight: 500; }
+.practice-records th, .practice-records td:first-child { color: var(--muted); }
+.practice-records td:nth-child(2) { white-space: nowrap; }
+.practice-records tbody tr:last-child td { border-bottom: 0; }
+.practice-records :is(th, td):last-child { text-align: end; }
+.practice-records button {
+  margin-inline-start: auto;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font: 600 15px var(--mono);
+}
+.practice-records button svg { color: var(--muted); flex-shrink: 0; }
+@media (max-width: 540px) {
+  .practice-pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .practice-pattern-dialog .modal-body { padding: 14px; }
+}

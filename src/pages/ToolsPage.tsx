@@ -1,4 +1,4 @@
-import { BookOpen, Box, ScanEye, ChevronRight, Film, GraduationCap } from "lucide-react";
+import { Timer, BookOpen, Box, ScanEye, ChevronRight, Film, GraduationCap } from "lucide-react";
 import { pageURL, type FollowPage } from "../navigation";
 
 export function ToolsPage({ followPage }: { followPage: FollowPage }) {
@@ -8,6 +8,12 @@ export function ToolsPage({ followPage }: { followPage: FollowPage }) {
         <h1>ツール</h1>
       </header>
       <div className="practice-options">
+        <a className="action-link practice-item" href={pageURL("algorithm-timer")}
+          onClick={(e) => followPage(e, "algorithm-timer")}>
+          <span className="practice-icon"><Timer size={23} /></span>
+          <strong>アルゴリズム計測</strong>
+          <ChevronRight size={18} aria-hidden="true" />
+        </a>
         <a className="action-link practice-item" href={pageURL("virtual")}
           onClick={(e) => followPage(e, "virtual")}>
           <span className="practice-icon"><Box size={23} /></span>

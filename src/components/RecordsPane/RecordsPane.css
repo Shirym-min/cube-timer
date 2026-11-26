@@ -204,3 +204,25 @@
   .timer-layout .records-table td button { min-height: 44px; font-size: 12px; }
   .timer-layout .empty-records { min-height: 100%; padding: 6px; text-align: center; }
 }
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .mobile-records .records-table { display: block; white-space: normal; }
+  .mobile-records .records-table thead { display: none; }
+  .mobile-records .records-table tbody {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px 12px;
+  }
+  .mobile-records .records-table tr {
+    position: relative;
+    display: grid;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+  }
+  .mobile-records .records-table td { height: auto; width: auto; border: 0; padding: 0; text-align: left; }
+  .mobile-records .records-table td button { white-space: normal; overflow-wrap: anywhere; }
+  .mobile-records .records-table td button::after { content: ""; position: absolute; inset: 0; }
+  .mobile-records .records-table td:last-child::before { content: attr(data-label) " "; }
+}

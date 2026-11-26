@@ -1,0 +1,80 @@
+.page-content.algorithm-timer {
+  --practice-gutter: clamp(12px, 3vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 var(--practice-gutter) 16px;
+}
+.algorithm-controls {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding-inline: var(--practice-gutter);
+  margin-inline: calc(-1 * var(--practice-gutter));
+}
+.algorithm-controls .icon-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.algorithm-view-switch { display: flex; }
+.algorithm-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+.algorithm-controls select {
+  min-height: 40px;
+  font-weight: 650;
+}
+.algorithm-options button {
+  min-width: 44px;
+  padding-inline: 8px;
+}
+.algorithm-options button .learning-label {
+  font-size: 12px;
+  padding: 0;
+  background: none;
+}
+.algorithm-prompt {
+  display: grid;
+  grid-template-columns: clamp(46px, 11vw, 72px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.algorithm-prompt svg.recall-flat { width: 100%; height: auto; }
+.algorithm-prompt h2 { font-size: 16px; }
+.algorithm-prompt p { font: 14px/1.45 var(--mono); margin-top: 3px; }
+.algorithm-prompt .icon-button { width: 44px; height: 44px; }
+.algorithm-timer .timer-stage:has(.timer-readout) { min-height: 230px; padding-block: 20px; }
+.is-running .algorithm-timer > :not(.timer-stage) { visibility: hidden; }
+.focus-mode .algorithm-timer .algorithm-controls { display: none; }
+
+@media (max-width: 760px) {
+  .algorithm-options { gap: 4px; }
+  .algorithm-view-switch button { min-width: 44px; }
+  .algorithm-options .learning-label { display: none; }
+  .algorithm-timer[data-view="timer"] {
+    min-height: calc(100dvh - 105px - env(safe-area-inset-bottom) - env(safe-area-inset-top));
+  }
+  .algorithm-timer .timer-digits:not(.long-value, .text-value) {
+    font-size: clamp(82px, 26vw, 126px);
+  }
+  .algorithm-timer .timer-digits.long-value { font-size: clamp(54px, 19vw, 96px); }
+}
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .algorithm-timer .timer-stage:has(.timer-readout) { min-height: 145px; padding: 0; }
+  .algorithm-timer .timer-touch { min-height: 76px; }
+  .algorithm-timer .timer-digits:not(.text-value) { font-size: clamp(56px, 19dvh, 100px); }
+  .algorithm-timer .timer-tools { top: 0; }
+}

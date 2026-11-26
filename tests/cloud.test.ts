@@ -42,6 +42,21 @@ function drive(initial: unknown[][] = []) {
 
 afterEach(() => vi.unstubAllGlobals());
 
+it("restores the algorithm and pattern with a practice result on a second device", async () => {
+  drive();
+  const entityId = crypto.randomUUID();
+  const solve: Operation = {
+    id: crypto.randomUUID(), entityId, kind: "solve", stamp: 1,
+    value: {
+      id: entityId, sessionId: "algorithm-practice", event: "333",
+      practice: { algorithm: "PLL", pattern: "Ja Perm" },
+      ms: 1980, penalty: "OK", splits: [], scramble: "R U R'", createdAt: 1, comment: "",
+    },
+  };
+  await syncOps("token", [solve]);
+  expect(materialize(await syncOps("token", [])).solves).toEqual([solve.value]);
+});
+
 it("reads every page and uploads only missing operations", async () => {
   const first = op(), second = op(), local = op();
   const { files } = drive([[first], [second, first]]);

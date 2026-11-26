@@ -86,7 +86,7 @@ function DistributionDetails({
           )}
         </svg>
         <div className="distribution-times" aria-hidden="true">
-          {[lower, (lower + upper) / 2, upper].map((value) => (
+          {distribution.timeTicks.map((value) => (
             <span key={value}>{seconds.format(value / 1000)}秒</span>
           ))}
         </div>
